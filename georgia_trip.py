@@ -14,21 +14,26 @@ st.markdown("""
     .block-container { direction: rtl; text-align: right; }
     
     div[data-testid="metric-container"] {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
         border: 1px solid #dee2e6;
         padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;
         border-right: 5px solid #28a745;
     }
-    div[data-testid="metric-container"] label { font-size: 16px !important; color: #495057 !important; font-weight: bold; }
+    div[data-testid="metric-container"] label, div[data-testid="metric-container"] div { 
+        color: #111111 !important; 
+    }
     
     .site-card {
-        background-color: #ffffff;
+        background-color: #ffffff !important;
         border: 1px solid #e0e0e0;
         padding: 20px;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.04);
         margin-bottom: 20px;
         border-right: 6px solid #ff4b4b;
+    }
+    .site-card h2, .site-card p, .site-card b {
+        color: #222222 !important;
     }
 </style>
 """, unsafe_allow_html=True)
