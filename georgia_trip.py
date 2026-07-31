@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import timedelta, date
 import math
+import urllib.parse
 
 # הגדרת תצורת העמוד (חייב להיות ראשון)
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
@@ -71,6 +72,19 @@ st.markdown("ניהול מסלול, עלויות יומיות, זמני נסיע
 st.markdown("---")
 
 # ==========================================
+# מסד הנתונים של המלונות (חדש!)
+# ==========================================
+hotels_data = [
+    {"מלון": "King Suite Black Sea View Hotel", "צ'ק אין": "14 באוגוסט", "צ'ק אאוט": "16 באוגוסט", "אזור": "באטומי"},
+    {"מלון": "Novotel Tbilisi Center", "צ'ק אין": "16 באוגוסט", "צ'ק אאוט": "19 באוגוסט", "אזור": "טביליסי"},
+    {"מלון": "Gudauri Lodge", "צ'ק אין": "19 באוגוסט", "צ'ק אאוט": "21 באוגוסט", "אזור": "גודאורי"},
+    {"מלון": "Novotel Tbilisi Center", "צ'ק אין": "21 באוגוסט", "צ'ק אאוט": "22 באוגוסט", "אזור": "טביליסי"},
+    {"מלון": "King Suite Black Sea View Hotel", "צ'ק אין": "22 באוגוסט", "צ'ק אאוט": "23 באוגוסט", "אזור": "באטומי"}
+]
+df_hotels = pd.DataFrame(hotels_data)
+
+
+# ==========================================
 # מסד הנתונים המלא של הטיול
 # ==========================================
 itinerary = [
@@ -122,7 +136,8 @@ with st.sidebar:
         "בחר מצב תצוגה:", 
         options=[
             "📅 פירוט מסלול ואטרקציות", 
-            "🚗 מחשבון ניווט וזמני נסיעה (חדש!)",
+            "🏨 מלונות", # התצוגה החדשה למלונות
+            "🚗 מחשבון ניווט וזמני נסיעה",
             "📊 דשבורד עלויות וזמנים",
             "🗺️ מפת האטרקציות"
         ]
@@ -177,15 +192,46 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             <p><b>📍 אזור:</b> {row['region']}</p>
             <p><b>📝 פרטים:</b> {row['details']}</p>
             <p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>
-            <p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה (מהאתר הקודם):</b> {row['travel_time']} שעות</p>
+            <p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>
             <p style="color: #2e7d32; font-weight: bold;">💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי</p>
         </div>
         """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 2: מחשבון ניווט (חדש)
+# תצוגה 2: מלונות וניווט (חדש)
 # ==========================================
-elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה (חדש!)":
+elif selected_tab == "🏨 מלונות":
+    st.subheader("🏨 בתי המלון שלנו")
+    
+    # הצגת טבלת המלונות
+    st.dataframe(df_hotels, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # ניווט ל-Google Maps מהמלון
+    st.subheader("🚗 תכנון נסיעה מהמלון")
+    st.write("בחר את המלון שבו תהיו, הקלד לאן תרצו לנסוע - וקבל קישור ישיר ל-Google Maps.")
+    
+    unique_hotels = df_hotels["מלון"].unique()
+    origin_hotel = st.selectbox("אנחנו יוצאים מ:", unique_hotels)
+    destination = st.text_input("לאן נוסעים? (למשל: Kazbegi, Martvili Canyon)", "Kazbegi")
+    
+    if st.button("חשב מסלול ב-Google Maps", type="primary"):
+        if destination:
+            origin_encoded = urllib.parse.quote(f"{origin_hotel}, Georgia")
+            destination_encoded = urllib.parse.quote(f"{destination}, Georgia")
+            
+            gmaps_url = f"https://www.google.com/maps/dir/?api=1&origin={origin_encoded}&destination={destination_encoded}&travelmode=driving"
+            
+            st.success("הקישור מוכן! לחץ עליו כדי לפתוח את אפליקציית הניווט בטלפון.")
+            st.markdown(f"### [📍 פתח ניווט למסלול]({gmaps_url})")
+        else:
+            st.warning("אנא הזן יעד כדי לחשב מרחק.")
+
+# ==========================================
+# תצוגה 3: מחשבון ניווט בין אטרקציות
+# ==========================================
+elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
     st.subheader("🚗 מחשבון זמני נסיעה וניווט בגאורגיה")
     st.markdown("בחר יעד מוצא ויעד יעד כדי לקבל הערכת זמן נסיעה וקישור ישיר לניווט ב-Google Maps.")
     st.markdown("---")
@@ -213,7 +259,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה (חדש
             hours = int(est_hours)
             minutes = int((est_hours - hours) * 60)
             
-            # קישור ל-Google Maps
+            # קישור ל-Google Maps (לפי קואורדינטות כדי להיות מדויק)
             gmaps_url = f"https://www.google.com/maps/dir/?api=1&origin={loc1['lat']},{loc1['lon']}&destination={loc2['lat']},{loc2['lon']}"
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -232,7 +278,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה (חדש
             """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 3: דשבורד עלויות
+# תצוגה 4: דשבורד עלויות
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות וזמנים":
     st.subheader(f"📊 דשבורד עלויות וזמנים")
@@ -250,7 +296,7 @@ elif selected_tab == "📊 דשבורד עלויות וזמנים":
         st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
-# תצוגה 4: מפה
+# תצוגה 5: מפה
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader(f"🗺️ מפת הטיול")
