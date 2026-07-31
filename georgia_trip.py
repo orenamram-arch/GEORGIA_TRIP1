@@ -201,7 +201,7 @@ itinerary = [
 with st.sidebar:
     # הצגת תמונת המשפחה שהעלית בסרגל הצד
     try:
-        st.image("IMG_1101.jpg", use_container_width=True, caption="המשפחה המטיילת ✈️")
+        st.image("IMG_1101.jpg", use_container_width=True, caption="הבונבונים ✈️")
     except FileNotFoundError:
         st.warning("⚠️ לא נמצאה התמונה IMG_1101.jpg באותה תיקייה.")
         
