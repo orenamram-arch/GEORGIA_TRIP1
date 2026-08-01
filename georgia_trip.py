@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 import math
 import urllib.parse
 import requests
@@ -13,7 +13,7 @@ import os
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
 
 # ==========================================
-# ניהול קובץ שמירה מקומי (JSON)
+# ניהול קובץ שמירה מקומי (JSON) וגיבוי
 # ==========================================
 DATA_FILE = "georgia_trip_data.json"
 
@@ -51,8 +51,8 @@ if 'expenses' not in st.session_state:
         st.session_state.expenses = saved_data["expenses"]
     else:
         st.session_state.expenses = [
-            {"desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50},
-            {"desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120}
+            {"id": 1, "desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50},
+            {"id": 2, "desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120}
         ]
 
 if 'packing_list' not in st.session_state:
@@ -79,7 +79,7 @@ def persist_all():
     save_data(data)
 
 # ==========================================
-# פונקציית עזר: חישוב מרחק וזמן משוער בין קואורדינטות (נוסחת Haversine)
+# פונקציות עזר
 # ==========================================
 def calculate_travel_estimation(lat1, lon1, lat2, lon2):
     R = 6371.0
@@ -98,9 +98,6 @@ def calculate_travel_estimation(lat1, lon1, lat2, lon2):
     
     return road_distance, estimated_hours
 
-# ==========================================
-# פונקציית עזר: שליפת מזג אוויר מ-Open-Meteo (חינמי ללא מפתח)
-# ==========================================
 def get_weather(lat, lon):
     try:
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
@@ -112,7 +109,6 @@ def get_weather(lat, lon):
             return f"{temp}°C, רוח: {wind} קמ\"ש"
     except:
         pass
-        return "לא ניתן לטעון תחזית כרגע"
     return "לא ניתן לטעון תחזית כרגע"
 
 # ==========================================
@@ -137,11 +133,37 @@ st.markdown("""
     .site-card h2, .site-card p, .site-card b { color: #222222 !important; }
     .date-badge { background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; margin-right: 10px; }
     .info-box { background-color: #f8f9fa; border-right: 4px solid #17a2b8; padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; }
+    .countdown-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
 st.markdown("ניהול מסלול מלא, תקציב הוצאות, ציוד ארוז, מזג אוויר חי, חניות, ארוחות משפחתיות וניווט.")
+
+# ==========================================
+# ווידג'ט ספירה לאחור (Countdown) בראש העמוד
+# ==========================================
+today_date = date.today()
+delta_days = (st.session_state.start_date - today_date).days
+if delta_days > 0:
+    st.markdown(f"""
+    <div class="countdown-box">
+        ⏳ עוד {delta_days} ימים בדיוק לתחילת ההרפתקה בגאורגיה! (מתחיל ב-{st.session_state.start_date.strftime('%d/%m/%Y')})
+    </div>
+    """, unsafe_allow_html=True)
+elif delta_days == 0:
+    st.markdown("""
+    <div class="countdown-box" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+        ✈️ הטיול מתחיל היום! סעו לשלום ותעשו חיים!
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+    <div class="countdown-box" style="background: linear-gradient(135deg, #4ca1af 0%, #c4e0e5 100%); color: #333;">
+        🌟 הטיול בעיצומו או כבר הסתיים! מקווים שנהניתם מכל רגע.
+    </div>
+    """, unsafe_allow_html=True)
+
 st.markdown("---")
 
 # ==========================================
@@ -301,7 +323,7 @@ itinerary = [
 ]
 
 # ==========================================
-# סרגל צד (Sidebar) - כפתורי בחירה וגלילה חלקה
+# סרגל צד (Sidebar)
 # ==========================================
 with st.sidebar:
     try:
@@ -312,7 +334,6 @@ with st.sidebar:
     st.markdown("---")
     st.header("📅 תאריכים והרכב")
     
-    # תאריך תחילת הטיול עם שמירה אוטומטית לקובץ
     new_start_date = st.date_input("תאריך תחילת הטיול:", value=st.session_state.start_date)
     if new_start_date != st.session_state.start_date:
         st.session_state.start_date = new_start_date
@@ -323,16 +344,12 @@ with st.sidebar:
     children = st.number_input("מספר ילדים", min_value=0, value=2, step=1)
     
     st.markdown("---")
-    st.header("🅿️ אפליקציות חניה")
-    st.markdown("""
-    * **טביליסי:** [Tbilisi Parking](https://parking.tbilisi.gov.ge/)
-    * **באטומי:** [ParkMate Batumi](https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi)
-    """)
-    
-    st.markdown("---")
-    st.header("💱 מטבע ושער")
-    exchange_rate = st.number_input("שער לארי (GEL) לשקל:", value=1.38, step=0.01)
-        
+    st.header("💱 המרת מטבע מהירה")
+    gel_input = st.number_input("סכום בלארי (GEL):", min_value=0.0, value=100.0, step=10.0)
+    exchange_rate = st.number_input("שער לארי לשקל:", value=1.38, step=0.01)
+    ils_calc = gel_input * exchange_rate
+    st.info(f"💡 שווה ערך: **{ils_calc:,.1f} ₪** | טיפ מומלץ (10%): **{gel_input*0.1:.1f} לארי**")
+
     st.markdown("---")
     st.header("⚙️ בקרת מסלול")
     
@@ -344,6 +361,7 @@ with st.sidebar:
             "🚗 מחשבון ניווט וזמני נסיעה",
             "📊 דשבורד עלויות ותקציב",
             "🎒 רשימת ציוד (Packing List)",
+            "📄 שוברים ומסמכים דיגיטליים",
             "🍷 אירוח משפחתי וסופרה",
             "🚨 טיפים לשטח וחירום",
             "🗺️ מפת האטרקציות"
@@ -365,6 +383,24 @@ with st.sidebar:
         selected_day = int(selected_day_str.split(" ")[1])
     else:
         selected_day = "הכל"
+
+    # אזור גיבוי נתונים
+    st.markdown("---")
+    st.header("💾 גיבוי ושחזור")
+    
+    # כפתור ייצוא גיבוי
+    backup_json = json.dumps({
+        "start_date": st.session_state.start_date.isoformat(),
+        "expenses": st.session_state.expenses,
+        "packing_list": st.session_state.packing_list
+    }, ensure_ascii=False, indent=4)
+    
+    st.download_button(
+        label="📥 הורד קובץ גיבוי מלא",
+        data=backup_json,
+        file_name="georgia_trip_backup.json",
+        mime="application/json"
+    )
 
 # עיבוד הנתונים
 df = pd.DataFrame(itinerary)
@@ -583,7 +619,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
                 """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 4: דשבורד עלויות ותקציב אמת
+# תצוגה 4: דשבורד עלויות ותקציב (כולל עריכה ומחיקת הוצאות)
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות ותקציב":
     st.subheader("📊 דשבורד עלויות, אטרקציות והוצאות בפועל")
@@ -601,22 +637,49 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
     col3.metric("⏱️ סך שעות פעילות", f"{filtered_df['activity_hours'].sum():,.1f} שעות")
     
     st.markdown("---")
-    st.subheader("➕ הוסף הוצאה חדשה בפועל (אוכל, דלק, חניה, מוניות...)")
+    st.subheader("➕ הוסף הוצאה חדשה בפועל")
     with st.form("add_expense_form", clear_on_submit=True):
         e_desc = st.text_input("תיאור ההוצאה (למשל: תדלוק, חניה בבאטומי):")
         e_cat = st.selectbox("קטגוריה:", ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"])
         e_amount = st.number_input("סכום בלארי (GEL):", min_value=1.0, value=20.0)
         submitted = st.form_submit_button("הוסף הוצאה לרשימה")
         if submitted and e_desc.strip():
-            st.session_state.expenses.append({"desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
+            new_id = max([e.get("id", 0) for e in st.session_state.expenses], default=0) + 1
+            st.session_state.expenses.append({"id": new_id, "desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
             persist_all()
             st.success("ההוצאה נוספה ונשמרה לצמיתות!")
             st.rerun()
                 
     if st.session_state.expenses:
-        st.markdown("### 📋 פירוט ההוצאות בשטח:")
-        df_exp = pd.DataFrame(st.session_state.expenses)
-        st.dataframe(df_exp, use_container_width=True, hide_index=True)
+        st.markdown("---")
+        st.subheader("📋 ניהול הוצאות קיימות (מחיקה ועריכה)")
+        
+        for idx, exp in enumerate(st.session_state.expenses):
+            with st.expander(f"📝 {exp['desc']} — {exp['amount']} GEL ({exp['category']})"):
+                with st.form(f"edit_exp_{exp.get('id', idx)}"):
+                    ed_desc = st.text_input("תיאור ההוצאה:", value=exp['desc'], key=f"ed_desc_{idx}")
+                    categories = ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"]
+                    default_cat_idx = categories.index(exp['category']) if exp['category'] in categories else 0
+                    ed_cat = st.selectbox("קטגוריה:", categories, index=default_cat_idx, key=f"ed_cat_{idx}")
+                    ed_amount = st.number_input("סכום בלארי (GEL):", min_value=1.0, value=float(exp['amount']), key=f"ed_amt_{idx}")
+                    
+                    col_b1, col_b2 = st.columns(2)
+                    save_clicked = col_b1.form_submit_button("💾 שמור שינויים")
+                    delete_clicked = col_b2.form_submit_button("🗑️ מחק הוצאה זו")
+                    
+                    if save_clicked:
+                        st.session_state.expenses[idx]["desc"] = ed_desc
+                        st.session_state.expenses[idx]["category"] = ed_cat
+                        st.session_state.expenses[idx]["amount"] = ed_amount
+                        persist_all()
+                        st.success("ההוצאה עודכנה בהצלחה!")
+                        st.rerun()
+                        
+                    if delete_clicked:
+                        st.session_state.expenses.pop(idx)
+                        persist_all()
+                        st.success("ההוצאה נמחקה!")
+                        st.rerun()
 
 # ==========================================
 # תצוגה 5: רשימת ציוד (Packing List)
@@ -652,7 +715,29 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
                 st.warning("הפריט כבר קיים ברשימה.")
 
 # ==========================================
-# תצוגה 6: חוויית סופרה ואירוח משפחתי
+# תצוגה 6: שוברים ומסמכים דיגיטליים
+# ==========================================
+elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
+    st.subheader("📄 מרכז מסמכים, שוברים וקישורים שימושיים")
+    st.markdown("כאן תוכלו לרכז את כל האישורים, כרטיסי הטיסה ופרטי ביטוח הנסיעות שלכם בגישה מהירה מהנייד.")
+    st.markdown("---")
+    
+    st.markdown("""
+    ### ✈️ טיסות וביטוח
+    * **כרטיסי טיסה (הלוך ושוב):** שמרו את קובצי ה-PDF במכשיר או הציגו את הברקוד מהמייל.
+    * **פוליסת ביטוח רפואי לחו"ל:** מומלץ לשמור צילום של מספר הפוליסה ומוקד החירום המשפחתי.
+    
+    ### 🏨 שוברי מלונות מוזמנים
+    * **באטומי:** King Suite Black Sea View Hotel (ימים 1-3, 9-11)
+    * **טביליסי:** Novotel Tbilisi Center (ימים 3-6, 8-9)
+    * **גודאורי:** Gudauri Lodge (ימים 6-8)
+    
+    ### 🚗 רכב השכרה
+    * ודאו שיש לכם רישיון נהיגה בינלאומי מודפס, רישיון ישראלי פלסטיק, וכרטיס אשראי בינלאומי על שם הנהג הרשום.
+    """)
+
+# ==========================================
+# תצוגה 7: חוויית סופרה ואירוח משפחתי
 # ==========================================
 elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     st.subheader("🍷 חוויית 'סופרה' וארוחות משפחתיות מסורתיות בגאורגיה")
@@ -683,7 +768,7 @@ elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     """)
 
 # ==========================================
-# תצוגה 7: טיפים לשטח וחירום
+# תצוגה 8: טיפים לשטח וחירום
 # ==========================================
 elif selected_tab == "🚨 טיפים לשטח וחירום":
     st.subheader("🚨 מידע שימושי, חניות, טיפים לנהיגה ומספרי חירום")
@@ -710,7 +795,7 @@ elif selected_tab == "🚨 טיפים לשטח וחירום":
         """)
 
 # ==========================================
-# תצוגה 8: מפה אינטראקטיבית
+# תצוגה 9: מפה אינטראקטיבית
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
