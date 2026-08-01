@@ -13,7 +13,7 @@ st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה
 # פונקציית עזר: חישוב מרחק וזמן משוער בין קואורדינטות (נוסחת Haversine)
 # ==========================================
 def calculate_travel_estimation(lat1, lon1, lat2, lon2):
-    R = 6371.0 # רדיוס כדור הארץ בקילומטרים
+    R = 6371.0  # רדיוס כדור הארץ בקילומטרים
     lat1_rad, lon1_rad = math.radians(lat1), math.radians(lon1)
     lat2_rad, lon2_rad = math.radians(lat2), math.radians(lon2)
     
@@ -72,19 +72,6 @@ st.markdown("ניהול מסלול, עלויות יומיות, זמני נסיע
 st.markdown("---")
 
 # ==========================================
-# מסד הנתונים של המלונות (חדש!)
-# ==========================================
-hotels_data = [
-    {"מלון": "King Suite Black Sea View Hotel", "צ'ק אין": "14 באוגוסט", "צ'ק אאוט": "16 באוגוסט", "אזור": "באטומי"},
-    {"מלון": "Novotel Tbilisi Center", "צ'ק אין": "16 באוגוסט", "צ'ק אאוט": "19 באוגוסט", "אזור": "טביליסי"},
-    {"מלון": "Gudauri Lodge", "צ'ק אין": "19 באוגוסט", "צ'ק אאוט": "21 באוגוסט", "אזור": "גודאורי"},
-    {"מלון": "Novotel Tbilisi Center", "צ'ק אין": "21 באוגוסט", "צ'ק אאוט": "22 באוגוסט", "אזור": "טביליסי"},
-    {"מלון": "King Suite Black Sea View Hotel", "צ'ק אין": "22 באוגוסט", "צ'ק אאוט": "23 באוגוסט", "אזור": "באטומי"}
-]
-df_hotels = pd.DataFrame(hotels_data)
-
-
-# ==========================================
 # מסד הנתונים המלא של הטיול
 # ==========================================
 itinerary = [
@@ -118,7 +105,7 @@ with st.sidebar:
     try:
         st.image("IMG_1101.jpg", use_container_width=True, caption="המשפחה המטיילת ✈️")
     except FileNotFoundError:
-        pass # מתעלם בשקט אם אין תמונה
+        pass  # מתעלם בשקט אם אין תמונה
         
     st.markdown("---")
     st.header("📅 תאריכים והרכב")
@@ -128,6 +115,10 @@ with st.sidebar:
     
     adults = st.number_input("מספר מבוגרים", min_value=1, value=2, step=1)
     children = st.number_input("מספר ילדים", min_value=0, value=2, step=1)
+    
+    st.markdown("---")
+    st.header("💱 מטבע ושער")
+    exchange_rate = st.number_input("שער לארי (GEL) לשקל:", value=1.38, step=0.01)
         
     st.markdown("---")
     st.header("⚙️ בקרת מסלול")
@@ -136,7 +127,7 @@ with st.sidebar:
         "בחר מצב תצוגה:", 
         options=[
             "📅 פירוט מסלול ואטרקציות", 
-            "🏨 מלונות", # התצוגה החדשה למלונות
+            "🏨 מלונות", 
             "🚗 מחשבון ניווט וזמני נסיעה",
             "📊 דשבורד עלויות וזמנים",
             "🗺️ מפת האטרקציות"
@@ -160,14 +151,34 @@ with st.sidebar:
     else:
         selected_day = "הכל"
 
-# עיבוד הנתונים
+# עיבוד הנתונים לאטרקציות
 df = pd.DataFrame(itinerary)
 df['total_cost_gel'] = (adults * df['adult_cost']) + (children * df['child_cost'])
 df['total_hours'] = df['activity_hours'] + df['travel_time']
-# הוספת תאריך לכל שורה בדאטה פריים
 df['actual_date'] = df['day'].apply(lambda d: start_date + timedelta(days=d-1))
 
-# סינון הנתונים
+# יצירת בסיס נתונים דינמי למלונות בהתאם לתאריך תחילת הטיול
+hotels_raw = [
+    {"מלון": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "אזור": "באטומי"},
+    {"מלון": "Novotel Tbilisi Center", "check_in_day": 3, "check_out_day": 6, "אזור": "טביליסי"},
+    {"מלון": "Gudauri Lodge", "check_in_day": 6, "check_out_day": 8, "אזור": "גודאורי"},
+    {"מלון": "Novotel Tbilisi Center", "check_in_day": 8, "check_out_day": 9, "אזור": "טביליסי"},
+    {"מלון": "King Suite Black Sea View Hotel", "check_in_day": 9, "check_out_day": 11, "אזור": "באטומי"}
+]
+
+hotels_processed = []
+for h in hotels_raw:
+    ci_date = start_date + timedelta(days=h["check_in_day"]-1)
+    co_date = start_date + timedelta(days=h["check_out_day"]-1)
+    hotels_processed.append({
+        "מלון": h["מלון"],
+        "צ'ק אין": ci_date.strftime('%d/%m/%Y'),
+        "צ'ק אאוט": co_date.strftime('%d/%m/%Y'),
+        "אזור": h["אזור"]
+    })
+df_hotels = pd.DataFrame(hotels_processed)
+
+# סינון נתוני האטרקציות
 filtered_df = df.copy()
 if selected_day != "הכל":
     filtered_df = filtered_df[filtered_df['day'] == selected_day]
@@ -176,7 +187,7 @@ if selected_day != "הכל":
 # תצוגה 1: פירוט מסלול
 # ==========================================
 if selected_tab == "📅 פירוט מסלול ואטרקציות":
-    st.subheader(f"📍 אטרקציות המסלול")
+    st.subheader("📍 אטרקציות המסלול")
     
     csv = filtered_df.to_csv(index=False).encode('utf-8-sig')
     st.download_button(label="📥 הורד מסלול לאקסל", data=csv, file_name='georgia_trip.csv', mime='text/csv')
@@ -184,7 +195,7 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
     
     for idx, row in filtered_df.iterrows():
         date_str = row['actual_date'].strftime("%d/%m/%Y")
-        day_name = row['actual_date'].strftime("%A") # ניתן לתרגם לעברית אם רוצים
+        item_cost_ils = row['total_cost_gel'] * exchange_rate
         
         st.markdown(f"""
         <div class="site-card">
@@ -193,47 +204,58 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             <p><b>📝 פרטים:</b> {row['details']}</p>
             <p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>
             <p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>
-            <p style="color: #2e7d32; font-weight: bold;">💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי</p>
+            <p style="color: #2e7d32; font-weight: bold;">💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי (~ {item_cost_ils:,.0f} ₪)</p>
         </div>
         """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 2: מלונות וניווט (חדש)
+# תצוגה 2: מלונות וניווט
 # ==========================================
 elif selected_tab == "🏨 מלונות":
     st.subheader("🏨 בתי המלון שלנו")
     
-    # הצגת טבלת המלונות
     st.dataframe(df_hotels, use_container_width=True, hide_index=True)
     
     st.markdown("---")
     
-    # ניווט ל-Google Maps מהמלון
     st.subheader("🚗 תכנון נסיעה מהמלון")
-    st.write("בחר את המלון שבו תהיו, הקלד לאן תרצו לנסוע - וקבל קישור ישיר ל-Google Maps.")
+    st.write("בחר את המלון שבו תהיו, הקלד לאן תרצו לנסוע - וקבל קישורים ישירים לניווט.")
     
     unique_hotels = df_hotels["מלון"].unique()
     origin_hotel = st.selectbox("אנחנו יוצאים מ:", unique_hotels)
     destination = st.text_input("לאן נוסעים? (למשל: Kazbegi, Martvili Canyon)", "Kazbegi")
     
-    if st.button("חשב מסלול ב-Google Maps", type="primary"):
+    if st.button("הפק קישורי ניווט", type="primary"):
         if destination:
             origin_encoded = urllib.parse.quote(f"{origin_hotel}, Georgia")
             destination_encoded = urllib.parse.quote(f"{destination}, Georgia")
             
             gmaps_url = f"https://www.google.com/maps/dir/?api=1&origin={origin_encoded}&destination={destination_encoded}&travelmode=driving"
+            waze_url = f"https://waze.com/ul?q={destination_encoded}&navigate=yes"
             
-            st.success("הקישור מוכן! לחץ עליו כדי לפתוח את אפליקציית הניווט בטלפון.")
-            st.markdown(f"### [📍 פתח ניווט למסלול]({gmaps_url})")
+            st.success("הקישורים מוכנים!")
+            col_nav1, col_nav2 = st.columns(2)
+            with col_nav1:
+                st.markdown(f"""
+                <a href="{gmaps_url}" target="_blank" style="display: block; padding: 12px; background-color: #4285F4; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                    🗺️ פתח ב-Google Maps
+                </a>
+                """, unsafe_allow_html=True)
+            with col_nav2:
+                st.markdown(f"""
+                <a href="{waze_url}" target="_blank" style="display: block; padding: 12px; background-color: #33ccff; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                    🚗 פתח ב-Waze
+                </a>
+                """, unsafe_allow_html=True)
         else:
-            st.warning("אנא הזן יעד כדי לחשב מרחק.")
+            st.warning("אנא הזן יעד כדי לחשב מסלול.")
 
 # ==========================================
 # תצוגה 3: מחשבון ניווט בין אטרקציות
 # ==========================================
 elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
     st.subheader("🚗 מחשבון זמני נסיעה וניווט בגאורגיה")
-    st.markdown("בחר יעד מוצא ויעד יעד כדי לקבל הערכת זמן נסיעה וקישור ישיר לניווט ב-Google Maps.")
+    st.markdown("בחר יעד מוצא ויעד להגעה כדי לקבל הערכת זמן נסיעה וקישורי ניווט ישירים.")
     st.markdown("---")
     
     all_sites = df['site'].tolist()
@@ -242,7 +264,6 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
     with col1:
         origin = st.selectbox("📍 בחר יעד מוצא:", options=all_sites, index=0)
     with col2:
-        # ברירת המחדל ליעד הבא תהיה האתר הבא ברשימה (אם יש)
         default_dest_index = 1 if len(all_sites) > 1 else 0
         destination = st.selectbox("🏁 בחר יעד הבא:", options=all_sites, index=default_dest_index)
         
@@ -253,14 +274,13 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
             loc1 = df[df['site'] == origin].iloc[0]
             loc2 = df[df['site'] == destination].iloc[0]
             
-            # חישוב 
             km_dist, est_hours = calculate_travel_estimation(loc1['lat'], loc1['lon'], loc2['lat'], loc2['lon'])
             
             hours = int(est_hours)
             minutes = int((est_hours - hours) * 60)
             
-            # קישור ל-Google Maps (לפי קואורדינטות כדי להיות מדויק)
             gmaps_url = f"https://www.google.com/maps/dir/?api=1&origin={loc1['lat']},{loc1['lon']}&destination={loc2['lat']},{loc2['lon']}"
+            waze_url = f"https://waze.com/ul?ll={loc2['lat']},{loc2['lon']}&navigate=yes"
             
             st.markdown("<br>", unsafe_allow_html=True)
             st.success(f"**מרחק משוער בכביש:** {km_dist:.1f} ק\"מ")
@@ -269,24 +289,35 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
             else:
                 st.info(f"**זמן נסיעה מוערך:** {minutes} דקות")
                 
-            st.markdown(f"""
-            <a href="{gmaps_url}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #4285F4; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                🗺️ פתח ניווט ב-Google Maps
-            </a>
-            <br><br>
-            <small style="color:gray;">* הנתונים מבוססים על חישוב סטטיסטי (מהירות ממוצעת של 55 קמ"ש עקב תנאי השטח בגאורגיה). הזמן בפועל עשוי להשתנות עקב פקקים או עצירות.</small>
-            """, unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            col_n1, col_n2 = st.columns(2)
+            with col_n1:
+                st.markdown(f"""
+                <a href="{gmaps_url}" target="_blank" style="display: block; padding: 12px; background-color: #4285F4; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                    🗺️ פתח ב-Google Maps
+                </a>
+                """, unsafe_allow_html=True)
+            with col_n2:
+                st.markdown(f"""
+                <a href="{waze_url}" target="_blank" style="display: block; padding: 12px; background-color: #33ccff; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                    🚗 פתח ב-Waze
+                </a>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("<br><small style='color:gray;'>* הנתונים מבוססים על חישוב סטטיסטי (מהירות ממוצעת של 55 קמ\"ש עקב תנאי השטח בגאורגיה).</small>", unsafe_allow_html=True)
 
 # ==========================================
 # תצוגה 4: דשבורד עלויות
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות וזמנים":
-    st.subheader(f"📊 דשבורד עלויות וזמנים")
+    st.subheader("📊 דשבורד עלויות וזמנים")
     st.markdown("---")
     
-    total_cost = filtered_df['total_cost_gel'].sum()
+    total_cost_gel = filtered_df['total_cost_gel'].sum()
+    total_cost_ils = total_cost_gel * exchange_rate
+    
     col1, col2 = st.columns(2)
-    col1.metric("💰 סך עלות אטרקציות", f"{total_cost:,.0f} GEL", f"~ {total_cost * 1.38:,.0f} ₪")
+    col1.metric("💰 סך עלות אטרקציות", f"{total_cost_gel:,.0f} GEL", f"~ {total_cost_ils:,.0f} ₪")
     col2.metric("⏱️ סך שעות פעילות", f"{filtered_df['activity_hours'].sum():,.1f} שעות")
     
     daily_summary = filtered_df.groupby('day')['total_cost_gel'].sum().reset_index()
@@ -296,10 +327,25 @@ elif selected_tab == "📊 דשבורד עלויות וזמנים":
         st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
-# תצוגה 5: מפה
+# תצוגה 5: מפה אינטראקטיבית
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
-    st.subheader(f"🗺️ מפת הטיול")
+    st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
     st.markdown("---")
     if not filtered_df.empty:
-        st.map(filtered_df[['lat', 'lon']], zoom=6)
+        fig_map = px.scatter_mapbox(
+            filtered_df,
+            lat="lat",
+            lon="lon",
+            hover_name="site",
+            hover_data=["day", "region", "icon"],
+            zoom=7,
+            height=500
+        )
+        fig_map.update_layout(
+            mapbox_style="open-street-map",
+            margin={"r":0,"t":0,"l":0,"b":0}
+        )
+        st.plotly_chart(fig_map, use_container_width=True)
+    else:
+        st.info("אין אטרקציות להצגה בסינון הנוכחי.")
