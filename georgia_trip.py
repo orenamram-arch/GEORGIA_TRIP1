@@ -13,7 +13,7 @@ st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה
 # פונקציית עזר: חישוב מרחק וזמן משוער בין קואורדינטות (נוסחת Haversine)
 # ==========================================
 def calculate_travel_estimation(lat1, lon1, lat2, lon2):
-    R = 6371.0  # רדיוס כדור הארץ בקילומטרים
+    R = 6371.0
     lat1_rad, lon1_rad = math.radians(lat1), math.radians(lon1)
     lat2_rad, lon2_rad = math.radians(lat2), math.radians(lon2)
     
@@ -35,41 +35,12 @@ def calculate_travel_estimation(lat1, lon1, lat2, lon2):
 st.markdown("""
 <style>
     .block-container { direction: rtl; text-align: right; }
-    
-    div[data-testid="metric-container"] {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-        border: 1px solid #dee2e6;
-        padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;
-        border-right: 5px solid #28a745;
-    }
-    div[data-testid="metric-container"] label, div[data-testid="metric-container"] div { 
-        color: #111111 !important; 
-    }
-    
-    .site-card {
-        background-color: #ffffff !important;
-        border: 1px solid #e0e0e0;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-        border-right: 6px solid #ff4b4b;
-    }
-    .site-card h2, .site-card p, .site-card b {
-        color: #222222 !important;
-    }
-    .date-badge {
-        background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; 
-        border-radius: 15px; font-size: 0.9em; font-weight: bold; margin-right: 10px;
-    }
-    .info-box {
-        background-color: #f8f9fa;
-        border-right: 4px solid #17a2b8;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin-top: 10px;
-        font-size: 0.95em;
-    }
+    div[data-testid="metric-container"] { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-right: 5px solid #28a745; }
+    div[data-testid="metric-container"] label, div[data-testid="metric-container"] div { color: #111111 !important; }
+    .site-card { background-color: #ffffff !important; border: 1px solid #e0e0e0; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); margin-bottom: 20px; border-right: 6px solid #ff4b4b; }
+    .site-card h2, .site-card p, .site-card b { color: #222222 !important; }
+    .date-badge { background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; margin-right: 10px; }
+    .info-box { background-color: #f8f9fa; border-right: 4px solid #17a2b8; padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -271,27 +242,27 @@ df['actual_date'] = df['day'].apply(lambda d: start_date + timedelta(days=d-1))
 # בסיס נתונים מעודכן למלונות
 hotels_raw = [
     {
-        "מלון": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "אזור": "באטומי",
+        "hotel": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "area": "באטומי",
         "parking": "חניה פרטית של המלון / חניה ברחוב סמוך (חינם לאורחי המלון על בסיס מקום פנוי).",
         "restaurants": ["Retro (חצ'פורי)", "Fanfan", "Heart of Batumi"]
     },
     {
-        "מלון": "Novotel Tbilisi Center", "check_in_day": 3, "check_out_day": 6, "אזור": "טביליסי",
+        "hotel": "Novotel Tbilisi Center", "check_in_day": 3, "check_out_day": 6, "area": "טביליסי",
         "parking": "חניון תת-קרקעי פרטי של המלון (בתשלום יומי של כ-20-30 לארי).",
         "restaurants": ["Shavi Lomi", "Culinarium Khasheria", "Pur Pur"]
     },
     {
-        "מלון": "Gudauri Lodge", "check_in_day": 6, "check_out_day": 8, "אזור": "גודאורי",
+        "hotel": "Gudauri Lodge", "check_in_day": 6, "check_out_day": 8, "area": "גודאורי",
         "parking": "חניה מסודרת חינם לאורחי המלון בחזית.",
         "restaurants": ["מסעדת המלון הראשית", "Cafe Quadra"]
     },
     {
-        "מלון": "Novotel Tbilisi Center", "check_in_day": 8, "check_out_day": 9, "אזור": "טביליסי",
+        "hotel": "Novotel Tbilisi Center", "check_in_day": 8, "check_out_day": 9, "area": "טביליסי",
         "parking": "חניון תת-קרקעי פרטי של המלון (בתשלום יומי).",
         "restaurants": ["Samikitno", "Machakhela"]
     },
     {
-        "מלון": "King Suite Black Sea View Hotel", "check_in_day": 9, "check_out_day": 11, "אזור": "באטומי",
+        "hotel": "King Suite Black Sea View Hotel", "check_in_day": 9, "check_out_day": 11, "area": "באטומי",
         "parking": "חניה פרטית של המלון / ברחוב סמוך.",
         "restaurants": ["Retro", "Chef's Grill"]
     }
@@ -302,12 +273,12 @@ for h in hotels_raw:
     ci_date = start_date + timedelta(days=h["check_in_day"]-1)
     co_date = start_date + timedelta(days=h["check_out_day"]-1)
     hotels_processed.append({
-        "מלון": h["מלון"],
-        "אזור": h["אזור"],
-        "צ'ק אין": ci_date.strftime('%d/%m/%Y'),
-        "צ'ק אאוט": co_date.strftime('%d/%m/%Y'),
-        "חניה": h["parking"],
-        "מסעדות באזור": ", ".join(h["restaurants"])
+        "hotel": h["hotel"],
+        "area": h["area"],
+        "check_in": ci_date.strftime('%d/%m/%Y'),
+        "check_out": co_date.strftime('%d/%m/%Y'),
+        "parking": h["parking"],
+        "restaurants": ", ".join(h["restaurants"])
     })
 df_hotels = pd.DataFrame(hotels_processed)
 
@@ -334,20 +305,18 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             rest_encoded = urllib.parse.quote(f"{rest}, {row['region']}, Georgia")
             restaurants_html += f"&bull; <a href='https://www.google.com/maps/search/?api=1&query={rest_encoded}' target='_blank'>{rest}</a><br>"
         
-        card_content = f"""
-        <div class="site-card">
-            <h2>{row['icon']} <span class="date-badge">{date_str}</span> יום {row['day']} | {row['site']}</h2>
-            <p><b>📍 אזור:</b> {row['region']}</p>
-            <p><b>📝 פרטים:</b> {row['details']}</p>
-            <p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>
-            <p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>
-            <p style="color: #2e7d32; font-weight: bold;">💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי (~ {item_cost_ils:,.0f} ₪)</p>
-            <div class="info-box">
-                <p><b>🅿️ מידע על חניה:</b> {row['parking']}</p>
-                <p><b>🍽️ מסעדות מומלצות בסביבה:</b><br>{restaurants_html}</p>
-            </div>
-        </div>
-        """
+        card_content = "<div class='site-card'>"
+        card_content += f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> יום {row['day']} | {row['site']}</h2>"
+        card_content += f"<p><b>📍 אזור:</b> {row['region']}</p>"
+        card_content += f"<p><b>📝 פרטים:</b> {row['details']}</p>"
+        card_content += f"<p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>"
+        card_content += f"<p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>"
+        card_content += f"<p style='color: #2e7d32; font-weight: bold;'>💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי (~ {item_cost_ils:,.0f} ₪)</p>"
+        card_content += "<div class='info-box'>"
+        card_content += f"<p><b>🅿️ מידע על חניה:</b> {row['parking']}</p>"
+        card_content += f"<p><b>🍽️ מסעדות מומלצות בסביבה:</b><br>{restaurants_html}</p>"
+        card_content += "</div></div>"
+        
         st.markdown(card_content, unsafe_allow_html=True)
 
 # ==========================================
@@ -357,21 +326,20 @@ elif selected_tab == "🏨 מלונות":
     st.subheader("🏨 בתי המלון שלנו, חניות ומסעדות סביבם")
     
     for idx, h in df_hotels.iterrows():
-        st.markdown(f"""
-        <div class="site-card" style="border-right-color: #3b82f6;">
-            <h2>🏨 {h['מלון']} ({h['אזור']})</h2>
-            <p><b>📅 תקופת שהייה:</b> {h['צ'ק אין']} עד {h['צ'ק אאוט']}</p>
-            <div class="info-box">
-                <p><b>🅿️ הסדר חניה במלון:</b> {h['חניה']}</p>
-                <p><b>🍽️ מסעדות באזור המלון:</b> {h['מסעדות באזור']}</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        hotel_content = "<div class='site-card' style='border-right-color: #3b82f6;'>"
+        hotel_content += f"<h2>🏨 {h['hotel']} ({h['area']})</h2>"
+        hotel_content += f"<p><b>📅 תקופת שהייה:</b> {h['check_in']} עד {h['check_out']}</p>"
+        hotel_content += "<div class='info-box'>"
+        hotel_content += f"<p><b>🅿️ הסדר חניה במלון:</b> {h['parking']}</p>"
+        hotel_content += f"<p><b>🍽️ מסעדות באזור המלון:</b> {h['restaurants']}</p>"
+        hotel_content += "</div></div>"
+        
+        st.markdown(hotel_content, unsafe_allow_html=True)
     
     st.markdown("---")
     st.subheader("🚗 תכנון נסיעה מהמלון")
     
-    unique_hotels = df_hotels["מלון"].unique()
+    unique_hotels = df_hotels["hotel"].unique()
     origin_hotel = st.selectbox("אנחנו יוצאים מ:", unique_hotels)
     destination = st.text_input("לאן נוסעים? (למשל: Kazbegi, Martvili Canyon)", "Kazbegi")
     
