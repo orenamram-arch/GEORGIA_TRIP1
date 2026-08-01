@@ -334,21 +334,21 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             rest_encoded = urllib.parse.quote(f"{rest}, {row['region']}, Georgia")
             restaurants_html += f"&bull; <a href='https://www.google.com/maps/search/?api=1&query={rest_encoded}' target='_blank'>{rest}</a><br>"
         
-        st.markdown(
-            f"<div class='site-card'>"
-            f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> יום {row['day']} | {row['site']}</h2>"
-            f"<p><b>📍 אזור:</b> {row['region']}</p>"
-            f"<p><b>📝 פרטים:</b> {row['details']}</p>"
-            f"<p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>"
-            f"<p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>"
-            f"<p style='color: #2e7d32; font-weight: bold;'>💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי (~ {item_cost_ils:,.0f} ₪)</p>"
-            f"<div class='info-box'>"
-            f"<p><b>🅿️ מידע על חניה:</b> {row['parking']}</p>"
-            f"<p><b>🍽️ מסעדות מומלצות בסביבה:</b><br>{restaurants_html}</p>"
-            f"</div>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
+        card_content = f"""
+        <div class="site-card">
+            <h2>{row['icon']} <span class="date-badge">{date_str}</span> יום {row['day']} | {row['site']}</h2>
+            <p><b>📍 אזור:</b> {row['region']}</p>
+            <p><b>📝 פרטים:</b> {row['details']}</p>
+            <p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>
+            <p>⏱️ <b>משך פעילות:</b> {row['activity_hours']} שעות &nbsp;&nbsp;|&nbsp;&nbsp; 🚗 <b>זמן נסיעה:</b> {row['travel_time']} שעות</p>
+            <p style="color: #2e7d32; font-weight: bold;">💰 עלות עבור {adults} מבוגרים ו-{children} ילדים: {row['total_cost_gel']} לארי (~ {item_cost_ils:,.0f} ₪)</p>
+            <div class="info-box">
+                <p><b>🅿️ מידע על חניה:</b> {row['parking']}</p>
+                <p><b>🍽️ מסעדות מומלצות בסביבה:</b><br>{restaurants_html}</p>
+            </div>
+        </div>
+        """
+        st.markdown(card_content, unsafe_allow_html=True)
 
 # ==========================================
 # תצוגה 2: מלונות וניווט
@@ -357,17 +357,16 @@ elif selected_tab == "🏨 מלונות":
     st.subheader("🏨 בתי המלון שלנו, חניות ומסעדות סביבם")
     
     for idx, h in df_hotels.iterrows():
-        st.markdown(
-            f"<div class='site-card' style='border-right-color: #3b82f6;'>"
-            f"<h2>🏨 {h['מלון']} ({h['אזור']})</h2>"
-            f"<p><b>📅 תקופת שהייה:</b> {h['צ'ק אין']} עד {h['צ'ק אאוט']}</p>"
-            f"<div class='info-box'>"
-            f"<p><b>🅿️ הסדר חניה במלון:</b> {h['חניה']}</p>"
-            f"<p><b>🍽️ מסעדות באזור המלון:</b> {h['מסעדות באזור']}</p>"
-            f"</div>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown(f"""
+        <div class="site-card" style="border-right-color: #3b82f6;">
+            <h2>🏨 {h['מלון']} ({h['אזור']})</h2>
+            <p><b>📅 תקופת שהייה:</b> {h['צ'ק אין']} עד {h['צ'ק אאוט']}</p>
+            <div class="info-box">
+                <p><b>🅿️ הסדר חניה במלון:</b> {h['חניה']}</p>
+                <p><b>🍽️ מסעדות באזור המלון:</b> {h['מסעדות באזור']}</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.subheader("🚗 תכנון נסיעה מהמלון")
