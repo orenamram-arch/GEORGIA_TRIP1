@@ -51,8 +51,8 @@ if 'expenses' not in st.session_state:
         st.session_state.expenses = saved_data["expenses"]
     else:
         st.session_state.expenses = [
-            {"id": 1, "desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50},
-            {"id": 2, "desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120}
+            {"id": 1, "desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50, "payer": "אני"},
+            {"id": 2, "desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120, "payer": "אני"}
         ]
 
 if 'packing_list' not in st.session_state:
@@ -69,12 +69,32 @@ if 'packing_list' not in st.session_state:
             {"item": "נעלי הליכה נוחות", "checked": False}
         ]
 
+if 'tasks_list' not in st.session_state:
+    if saved_data and "tasks_list" in saved_data:
+        st.session_state.tasks_list = saved_data["tasks_list"]
+    else:
+        st.session_state.tasks_list = [
+            {"task": "הזמנת רכב השכרה", "checked": True},
+            {"task": "וידוא תוקף דרכונים (מעל חצי שנה)", "checked": True},
+            {"task": "רכישת חבילת גלישה לחו\"ל", "checked": False},
+            {"task": "המרת דולרים חדשים מזומן", "checked": False},
+            {"task": "הורדת אפליקציות ניווט וחניה (Waze, ParkMate)", "checked": False}
+        ]
+
+if 'journal_notes' not in st.session_state:
+    if saved_data and "journal_notes" in saved_data:
+        st.session_state.journal_notes = saved_data["journal_notes"]
+    else:
+        st.session_state.journal_notes = "כאן תוכל לכתוב תובנות, שמות של מסעדות סודיות שמצאתם בדרך, או חוויות מהשטח..."
+
 def persist_all():
     """שומר את כל הנתונים הדינאמיים לקובץ המקומי לצמיתות"""
     data = {
         "start_date": st.session_state.start_date.isoformat(),
         "expenses": st.session_state.expenses,
-        "packing_list": st.session_state.packing_list
+        "packing_list": st.session_state.packing_list,
+        "tasks_list": st.session_state.tasks_list,
+        "journal_notes": st.session_state.journal_notes
     }
     save_data(data)
 
@@ -138,7 +158,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
-st.markdown("ניהול מסלול מלא, תקציב הוצאות, ציוד ארוז, מזג אוויר חי, חניות, ארוחות משפחתיות וניווט.")
+st.markdown("ניהול מסלול מלא, תקציב הוצאות, פיצול תשלומים, ציוד ארוז, משימות מנהליות, יומן מסע וחירום.")
 
 # ==========================================
 # ווידג'ט ספירה לאחור (Countdown) בראש העמוד
@@ -359,11 +379,13 @@ with st.sidebar:
             "📅 פירוט מסלול ואטרקציות", 
             "🏨 מלונות", 
             "🚗 מחשבון ניווט וזמני נסיעה",
-            "📊 דשבורד עלויות ותקציב",
+            "📊 דשבורד עלויות ופיצול תשלומים",
             "🎒 רשימת ציוד (Packing List)",
+            "📋 משימות טרום-טיול",
+            "📓 יומן מסע אישי",
             "📄 שוברים ומסמכים דיגיטליים",
             "🍷 אירוח משפחתי וסופרה",
-            "🚨 טיפים לשטח וחירום",
+            "🚨 חירום וטיפים לשטח",
             "🗺️ מפת האטרקציות"
         ],
         index=0
@@ -388,11 +410,12 @@ with st.sidebar:
     st.markdown("---")
     st.header("💾 גיבוי ושחזור")
     
-    # כפתור ייצוא גיבוי
     backup_json = json.dumps({
         "start_date": st.session_state.start_date.isoformat(),
         "expenses": st.session_state.expenses,
-        "packing_list": st.session_state.packing_list
+        "packing_list": st.session_state.packing_list,
+        "tasks_list": st.session_state.tasks_list,
+        "journal_notes": st.session_state.journal_notes
     }, ensure_ascii=False, indent=4)
     
     st.download_button(
@@ -619,10 +642,10 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
                 """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 4: דשבורד עלויות ותקציב (כולל עריכה ומחיקת הוצאות)
+# תצוגה 4: דשבורד עלויות ופיצול תשלומים
 # ==========================================
-elif selected_tab == "📊 דשבורד עלויות ותקציב":
-    st.subheader("📊 דשבורד עלויות, אטרקציות והוצאות בפועל")
+elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים":
+    st.subheader("📊 דשבורד עלויות, פיצול הוצאות משפחתי וניהול בשטח")
     st.markdown("---")
     
     total_cost_gel = filtered_df['total_cost_gel'].sum()
@@ -636,16 +659,36 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
     col2.metric("קטגוריית הוצאות שוטפות", f"{actual_spent_gel:,.0f} GEL", f"~ {actual_spent_ils:,.0f} ₪")
     col3.metric("⏱️ סך שעות פעילות", f"{filtered_df['activity_hours'].sum():,.1f} שעות")
     
+    # סיכום לפי משלם (פיצול הוצאות)
+    st.markdown("---")
+    st.subheader("👥 סיכום פיצול הוצאות לפי משלם")
+    payer_summary = {}
+    for e in st.session_state.expenses:
+        p = e.get("payer", "אני")
+        payer_summary[p] = payer_summary.get(p, 0) + e['amount']
+    
+    p_cols = st.columns(max(len(payer_summary), 1))
+    for i, (payer, amt) in enumerate(payer_summary.items()):
+        with p_cols[i % len(p_cols)]:
+            st.metric(f"שולם על ידי: {payer}", f"{amt:,.1f} GEL", f"~ {amt*exchange_rate:,.0f} ₪")
+
     st.markdown("---")
     st.subheader("➕ הוסף הוצאה חדשה בפועל")
     with st.form("add_expense_form", clear_on_submit=True):
         e_desc = st.text_input("תיאור ההוצאה (למשל: תדלוק, חניה בבאטומי):")
         e_cat = st.selectbox("קטגוריה:", ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"])
         e_amount = st.number_input("סכום בלארי (GEL):", min_value=1.0, value=20.0)
+        e_payer = st.selectbox("מי שילם?", ["אני", "משפחה שנייה / חברים", "התחלקנו שווה בשווה"])
         submitted = st.form_submit_button("הוסף הוצאה לרשימה")
         if submitted and e_desc.strip():
             new_id = max([e.get("id", 0) for e in st.session_state.expenses], default=0) + 1
-            st.session_state.expenses.append({"id": new_id, "desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
+            st.session_state.expenses.append({
+                "id": new_id, 
+                "desc": e_desc.strip(), 
+                "category": e_cat, 
+                "amount": e_amount,
+                "payer": e_payer
+            })
             persist_all()
             st.success("ההוצאה נוספה ונשמרה לצמיתות!")
             st.rerun()
@@ -655,13 +698,18 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
         st.subheader("📋 ניהול הוצאות קיימות (מחיקה ועריכה)")
         
         for idx, exp in enumerate(st.session_state.expenses):
-            with st.expander(f"📝 {exp['desc']} — {exp['amount']} GEL ({exp['category']})"):
+            with st.expander(f"📝 {exp['desc']} — {exp['amount']} GEL ({exp['category']}) | שולם ע"f"י: {exp.get('payer', 'אני')}"):
                 with st.form(f"edit_exp_{exp.get('id', idx)}"):
                     ed_desc = st.text_input("תיאור ההוצאה:", value=exp['desc'], key=f"ed_desc_{idx}")
                     categories = ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"]
                     default_cat_idx = categories.index(exp['category']) if exp['category'] in categories else 0
                     ed_cat = st.selectbox("קטגוריה:", categories, index=default_cat_idx, key=f"ed_cat_{idx}")
                     ed_amount = st.number_input("סכום בלארי (GEL):", min_value=1.0, value=float(exp['amount']), key=f"ed_amt_{idx}")
+                    
+                    payers_list = ["אני", "משפחה שנייה / חברים", "התחלקנו שווה בשווה"]
+                    curr_payer = exp.get('payer', 'אני')
+                    default_payer_idx = payers_list.index(curr_payer) if curr_payer in payers_list else 0
+                    ed_payer = st.selectbox("מי שילם?", payers_list, index=default_payer_idx, key=f"ed_payer_{idx}")
                     
                     col_b1, col_b2 = st.columns(2)
                     save_clicked = col_b1.form_submit_button("💾 שמור שינויים")
@@ -671,6 +719,7 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
                         st.session_state.expenses[idx]["desc"] = ed_desc
                         st.session_state.expenses[idx]["category"] = ed_cat
                         st.session_state.expenses[idx]["amount"] = ed_amount
+                        st.session_state.expenses[idx]["payer"] = ed_payer
                         persist_all()
                         st.success("ההוצאה עודכנה בהצלחה!")
                         st.rerun()
@@ -715,7 +764,54 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
                 st.warning("הפריט כבר קיים ברשימה.")
 
 # ==========================================
-# תצוגה 6: שוברים ומסמכים דיגיטליים
+# תצוגה 6: משימות טרום-טיול
+# ==========================================
+elif selected_tab == "📋 משימות טרום-טיול":
+    st.subheader("📋 משימות ומנהלות לפני היציאה לטיול")
+    st.markdown("סמן את המשימות שכבר סגרתם לקראת הנסיעה:")
+    st.markdown("---")
+    
+    tasks_changed = False
+    for i, t_dict in enumerate(st.session_state.tasks_list):
+        t_status = st.checkbox(t_dict["task"], value=t_dict["checked"], key=f"task_{i}")
+        if t_status != t_dict["checked"]:
+            st.session_state.tasks_list[i]["checked"] = t_status
+            tasks_changed = True
+            
+    if tasks_changed:
+        persist_all()
+        
+    st.markdown("---")
+    st.subheader("➕ הוסף משימה חדשה לרשימה")
+    with st.form("add_task_form", clear_on_submit=True):
+        new_task = st.text_input("תיאור המשימה (למשל: רכישת אינטרנט בחו"ל):")
+        task_submitted = st.form_submit_button("הוסף משימה")
+        if task_submitted and new_task.strip():
+            existing_tasks = [d["task"] for d in st.session_state.tasks_list]
+            if new_task.strip() not in existing_tasks:
+                st.session_state.tasks_list.append({"task": new_task.strip(), "checked": False})
+                persist_all()
+                st.success("המשימה נוספה ונשמרה לצמיתות!")
+                st.rerun()
+            else:
+                st.warning("המשימה כבר קיימת ברשימה.")
+
+# ==========================================
+# תצוגה 7: יומן מסע אישי
+# ==========================================
+elif selected_tab == "📓 יומן מסע אישי":
+    st.subheader("📓 יומן מסע ופתקים אישיים מהשטח")
+    st.markdown("כאן תוכל לכתוב חופשי תובנות, שמות של מקומות מיוחדים שנתקלתם בהם, או זכרונות מהטיול:")
+    st.markdown("---")
+    
+    current_notes = st.text_area("תוכן היומן:", value=st.session_state.journal_notes, height=250)
+    if current_notes != st.session_state.journal_notes:
+        st.session_state.journal_notes = current_notes
+        persist_all()
+        st.success("💾 השינויים ביומן נשמרו אוטומטית!")
+
+# ==========================================
+# תצוגה 8: שוברים ומסמכים דיגיטליים
 # ==========================================
 elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     st.subheader("📄 מרכז מסמכים, שוברים וקישורים שימושיים")
@@ -737,7 +833,7 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     """)
 
 # ==========================================
-# תצוגה 7: חוויית סופרה ואירוח משפחתי
+# תצוגה 9: חוויית סופרה ואירוח משפחתי
 # ==========================================
 elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     st.subheader("🍷 חוויית 'סופרה' וארוחות משפחתיות מסורתיות בגאורגיה")
@@ -768,10 +864,10 @@ elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     """)
 
 # ==========================================
-# תצוגה 8: טיפים לשטח וחירום
+# תצוגה 10: חירום וטיפים לשטח
 # ==========================================
-elif selected_tab == "🚨 טיפים לשטח וחירום":
-    st.subheader("🚨 מידע שימושי, חניות, טיפים לנהיגה ומספרי חירום")
+elif selected_tab == "🚨 חירום וטיפים לשטח":
+    st.subheader("🚨 מספרי חירום, עזרה ראשונה וטיפים לנהיגה בהרים")
     st.markdown("---")
     
     col_t1, col_t2 = st.columns(2)
@@ -794,8 +890,15 @@ elif selected_tab == "🚨 טיפים לשטח וחירום":
         * **דלק:** מומלץ לתדלק תמיד כשמיכל הדלק יורד מתחת לחצי, בעיקר לפני האזורים ההרריים שבהם תחנות הדלק דלילות יותר.
         """)
 
+    st.markdown("---")
+    st.markdown("""
+    <a href="https://maps.google.com/?q=hospital" target="_blank" style="display: block; padding: 12px; background-color: #dc3545; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+        🏥 מצא בית חולים או מרכז רפואי קרוב ב-Google Maps
+    </a>
+    """, unsafe_allow_html=True)
+
 # ==========================================
-# תצוגה 9: מפה אינטראקטיבית
+# תצוגה 11: מפה אינטראקטיבית
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
