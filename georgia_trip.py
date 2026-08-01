@@ -698,7 +698,7 @@ elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים
         st.subheader("📋 ניהול הוצאות קיימות (מחיקה ועריכה)")
         
         for idx, exp in enumerate(st.session_state.expenses):
-            with st.expander(f"📝 {exp['desc']} — {exp['amount']} GEL ({exp['category']}) | שולם ע"f"י: {exp.get('payer', 'אני')}"):
+            with st.expander(f"📝 {exp['desc']} — {exp['amount']} GEL ({exp['category']}) | שולם ע\"י: {exp.get('payer', 'אני')}"):
                 with st.form(f"edit_exp_{exp.get('id', idx)}"):
                     ed_desc = st.text_input("תיאור ההוצאה:", value=exp['desc'], key=f"ed_desc_{idx}")
                     categories = ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"]
@@ -784,7 +784,7 @@ elif selected_tab == "📋 משימות טרום-טיול":
     st.markdown("---")
     st.subheader("➕ הוסף משימה חדשה לרשימה")
     with st.form("add_task_form", clear_on_submit=True):
-        new_task = st.text_input("תיאור המשימה (למשל: רכישת אינטרנט בחו"ל):")
+        new_task = st.text_input("תיאור המשימה (למשל: רכישת אינטרנט בחו\"ל):")
         task_submitted = st.form_submit_button("הוסף משימה")
         if task_submitted and new_task.strip():
             existing_tasks = [d["task"] for d in st.session_state.tasks_list]
@@ -821,7 +821,7 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     st.markdown("""
     ### ✈️ טיסות וביטוח
     * **כרטיסי טיסה (הלוך ושוב):** שמרו את קובצי ה-PDF במכשיר או הציגו את הברקוד מהמייל.
-    * **פוליסת ביטוח רפואי לחו"ל:** מומלץ לשמור צילום של מספר הפוליסה ומוקד החירום המשפחתי.
+    * **פוליסת ביטוח רפואי לחו\"ל:** מומלץ לשמור צילום של מספר הפוליסה ומוקד החירום המשפחתי.
     
     ### 🏨 שוברי מלונות מוזמנים
     * **באטומי:** King Suite Black Sea View Hotel (ימים 1-3, 9-11)
