@@ -13,9 +13,13 @@ import os
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
 
 # ==========================================
-# ניהול קובץ שמירה מקומי (JSON) וגיבוי
+# ניהול קובץ שמירה מקומי (JSON) ותיקיית מסמכים
 # ==========================================
 DATA_FILE = "georgia_trip_data.json"
+DOCS_DIR = "uploaded_docs"
+
+if not os.path.exists(DOCS_DIR):
+    os.makedirs(DOCS_DIR)
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -87,6 +91,12 @@ if 'journal_notes' not in st.session_state:
     else:
         st.session_state.journal_notes = "כאן תוכל לכתוב תובנות, שמות של מסעדות סודיות שמצאתם בדרך, או חוויות מהשטח..."
 
+if 'uploaded_files_meta' not in st.session_state:
+    if saved_data and "uploaded_files_meta" in saved_data:
+        st.session_state.uploaded_files_meta = saved_data["uploaded_files_meta"]
+    else:
+        st.session_state.uploaded_files_meta = []
+
 def persist_all():
     """שומר את כל הנתונים הדינאמיים לקובץ המקומי לצמיתות"""
     data = {
@@ -94,7 +104,8 @@ def persist_all():
         "expenses": st.session_state.expenses,
         "packing_list": st.session_state.packing_list,
         "tasks_list": st.session_state.tasks_list,
-        "journal_notes": st.session_state.journal_notes
+        "journal_notes": st.session_state.journal_notes,
+        "uploaded_files_meta": st.session_state.uploaded_files_meta
     }
     save_data(data)
 
@@ -158,7 +169,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
-st.markdown("ניהול מסלול מלא, תקציב הוצאות, פיצול תשלומים, ציוד ארוז, משימות מנהליות, יומן מסע וחירום.")
+st.markdown("ניהול מסלול מלא, תקציב הוצאות, פיצול תשלומים, ציוד ארוז, משימות מנהליות, יומן מסע וניהול מסמכים.")
 
 # ==========================================
 # ווידג'ט ספירה לאחור (Countdown) בראש העמוד
@@ -415,7 +426,8 @@ with st.sidebar:
         "expenses": st.session_state.expenses,
         "packing_list": st.session_state.packing_list,
         "tasks_list": st.session_state.tasks_list,
-        "journal_notes": st.session_state.journal_notes
+        "journal_notes": st.session_state.journal_notes,
+        "uploaded_files_meta": st.session_state.uploaded_files_meta
     }, ensure_ascii=False, indent=4)
     
     st.download_button(
@@ -659,7 +671,6 @@ elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים
     col2.metric("קטגוריית הוצאות שוטפות", f"{actual_spent_gel:,.0f} GEL", f"~ {actual_spent_ils:,.0f} ₪")
     col3.metric("⏱️ סך שעות פעילות", f"{filtered_df['activity_hours'].sum():,.1f} שעות")
     
-    # סיכום לפי משלם (פיצול הוצאות)
     st.markdown("---")
     st.subheader("👥 סיכום פיצול הוצאות לפי משלם")
     payer_summary = {}
@@ -811,25 +822,78 @@ elif selected_tab == "📓 יומן מסע אישי":
         st.success("💾 השינויים ביומן נשמרו אוטומטית!")
 
 # ==========================================
-# תצוגה 8: שוברים ומסמכים דיגיטליים
+# תצוגה 8: שוברים ומסמכים דיגיטליים (כולל העלאת קבצים)
 # ==========================================
 elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
-    st.subheader("📄 מרכז מסמכים, שוברים וקישורים שימושיים")
-    st.markdown("כאן תוכלו לרכז את כל האישורים, כרטיסי הטיסה ופרטי ביטוח הנסיעות שלכם בגישה מהירה מהנייד.")
+    st.subheader("📄 מרכז מסמכים, שוברים והעלאת קבצים")
+    st.markdown("כאן תוכלו להעלות ולרכז את כל האישורים, כרטיסי הטיסה, פוליסות הביטוח ושוברי המלונות שלכם.")
     st.markdown("---")
     
+    # אזור העלאת קבצים חדשים
+    st.markdown("### 📤 העלאת קובץ חדש (PDF, תמונות, מסמכים)")
+    uploaded_file = st.file_uploader("בחר קובץ להעלאה:", type=["pdf", "png", "jpg", "jpeg", "txt"])
+    file_category = st.selectbox("בחר סוג מסמך:", ["טיסות", "ביטוח רפואי", "מלון", "השכרת רכב", "שונות"])
+    
+    if uploaded_file is not None:
+        if st.button("שמור קובץ במערכת", type="primary"):
+            file_path = os.path.join(DOCS_DIR, uploaded_file.name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            # בדיקה האם הקובץ כבר קיים ברשימת המטא-דאטה
+            exists_idx = next((i for i, item in enumerate(st.session_state.uploaded_files_meta) if item["filename"] == uploaded_file.name), None)
+            file_info = {
+                "filename": uploaded_file.name,
+                "category": file_category,
+                "path": file_path
+            }
+            if exists_idx is not None:
+                st.session_state.uploaded_files_meta[exists_idx] = file_info
+            else:
+                st.session_state.uploaded_files_meta.append(file_info)
+                
+            persist_all()
+            st.success(f"הקובץ '{uploaded_file.name}' הועלה ונשמר בהצלחה!")
+            st.rerun()
+
+    st.markdown("---")
+    st.subheader("📁 המסמכים והשוברים השמורים שלך:")
+    
+    if not st.session_state.uploaded_files_meta:
+        st.info("עדיין לא הועלו קבצים. השתמש בטופס למעלה כדי להעלות מסמכים.")
+    else:
+        for idx, f_meta in enumerate(st.session_state.uploaded_files_meta):
+            col_d1, col_d2, col_d3 = st.columns([3, 2, 1])
+            with col_d1:
+                st.markdown(f"<b>📄 {f_meta['filename']}</b> <span style='color: gray; font-size: 0.85em;'>({f_meta['category']})</span>", unsafe_allow_html=True)
+            with col_d2:
+                if os.path.exists(f_meta['path']):
+                    with open(f_meta['path'], "rb") as file_to_down:
+                        st.download_button(
+                            label="📥 הורד / הצג",
+                            data=file_to_down,
+                            file_name=f_meta['filename'],
+                            key=f"down_file_{idx}"
+                        )
+                else:
+                    st.warning("הקובץ חסר בשרת")
+            with col_d3:
+                if st.button("🗑️ מחק", key=f"del_file_{idx}"):
+                    if os.path.exists(f_meta['path']):
+                        try:
+                            os.remove(f_meta['path'])
+                        except:
+                            pass
+                    st.session_state.uploaded_files_meta.pop(idx)
+                    persist_all()
+                    st.success("הקובץ נמחק!")
+                    st.rerun()
+
+    st.markdown("---")
     st.markdown("""
-    ### ✈️ טיסות וביטוח
-    * **כרטיסי טיסה (הלוך ושוב):** שמרו את קובצי ה-PDF במכשיר או הציגו את הברקוד מהמייל.
-    * **פוליסת ביטוח רפואי לחו\"ל:** מומלץ לשמור צילום של מספר הפוליסה ומוקד החירום המשפחתי.
-    
-    ### 🏨 שוברי מלונות מוזמנים
-    * **באטומי:** King Suite Black Sea View Hotel (ימים 1-3, 9-11)
-    * **טביליסי:** Novotel Tbilisi Center (ימים 3-6, 8-9)
-    * **גודאורי:** Gudauri Lodge (ימים 6-8)
-    
-    ### 🚗 רכב השכרה
-    * ודאו שיש לכם רישיון נהיגה בינלאומי מודפס, רישיון ישראלי פלסטיק, וכרטיס אשראי בינלאומי על שם הנהג הרשום.
+    ### ℹ️ קישורים ומידע כללי:
+    * **כרטיסי טיסה (הלוך ושוב):** מומלץ להעלות את ה-PDF של כרטיסי הטיסה לכאן לגישה מהירה גם ללא קליטה בשדה התעופה.
+    * **פוליסת ביטוח רפואי לחו\"ל:** חובה לשמור פה את צילום הפוליסה ומוקד החירום.
     """)
 
 # ==========================================
