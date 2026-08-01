@@ -63,7 +63,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
-st.markdown("ניהול מסלול מלא, תקציב הוצאות, ציוד ארוז, מזג אוויר חי, חניות ואפליקציות תשלום.")
+st.markdown("ניהול מסלול מלא, תקציב הוצאות, ציוד ארוז, מזג אוויר חי, חניות, ארוחות משפחתיות וניווט.")
 st.markdown("---")
 
 # ==========================================
@@ -94,38 +94,38 @@ itinerary = [
         "day": 1, "region": "באטומי (חוף וטיילת)", "site": "שדרות באטומי (Batumi Boulevard)", "hours": "פתוח 24/7", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.5, "travel_time": 0.0, "icon": "🌴", "lat": 41.6530, "lon": 41.6360, 
         "details": "טיול רגלי או רכיבה לאורך הטיילת המרשימה (7 ק\"מ).",
-        "parking": "חניה עירונית מוסדרת (תשלום באמצעות אפליקציית Batumi Parking או מכשירי כרטיס מקומיים).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניה עירונית מוסדרת בבאטומי.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Retro (מפורסם בזכות האצ'פורי אג'רולי)", "Fanfan (אוכל אירופאי וגאורגי מעוצב)"]
     },
     {
         "day": 1, "region": "באטומי (חוף וטיילת)", "site": "פסל עלי ונינו (Ali and Nino)", "hours": "פתוח 24/7", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 0.5, "travel_time": 0.3, "icon": "🗿", "lat": 41.6556, "lon": 41.6394, 
         "details": "צפייה בפסל הדינמי המפורסם על קו המים.",
-        "parking": "חניה ציבורית סמוך לנמל (תשלום באפליקציית Batumi Parking).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניה ציבורית סמוך לנמל.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Chef's Grill", "Batumeti"]
     },
     {
         "day": 2, "region": "באטומי (אטרקציות)", "site": "הדולפינריום של באטומי", "hours": "16:00 / 19:00", 
         "adult_cost": 25, "child_cost": 25, "activity_hours": 2.0, "travel_time": 0.4, "icon": "🐬", "lat": 41.6475, "lon": 41.6231, 
         "details": "מופע דולפינים מרהיב וחווייתי.",
-        "parking": "חניון סביב פארק 6 במאי (חניה עירונית בתשלום באפליקציה).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניון סביב פארק 6 במאי.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Restaurant 360 (במלון שירטון הסמוך)", "Laguna (מאפיית פחמימות מיתולוגית)"]
     },
     {
         "day": 2, "region": "באטומי (אטרקציות)", "site": "רכבל ארגו (Argo Cable Car)", "hours": "10:00 - 22:00", 
         "adult_cost": 30, "child_cost": 15, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🚡", "lat": 41.6472, "lon": 41.6455, "details": "עלייה לתצפית פנורמית מרהיבה.",
-        "parking": "חניון רשמי של הרכבל (תשלום מקומי).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניון רשמי של הרכבל.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Argo Cafe (בראש ההר)", "Old Boulevard"]
     },
     {
         "day": 2, "region": "באטומי (אטרקציות)", "site": "הגנים הבוטניים של באטומי", "hours": "09:00 - 19:30", 
         "adult_cost": 30, "child_cost": 30, "activity_hours": 3.0, "travel_time": 0.4, "icon": "🌳", "lat": 41.6963, "lon": 41.7163, "details": "סיור בטבע ירוק ועשיר הנושק לים.",
-        "parking": "חניון מסודר בכניסה הראשית לגנים (תשלום במקום).",
-        "parking_app": "ללא אפליקציה (תשלום במקום)", "parking_link": "",
+        "parking": "חניון בכניסה הראשית לגנים.",
+        "parking_app": "תשלום במקום", "parking_link": "",
         "restaurants": ["Green Cape Cafe", "מסעדות דגים מקומיות בחוף מחירינגי"]
     },
     {
@@ -138,84 +138,84 @@ itinerary = [
     {
         "day": 3, "region": "מרטווילי ופרומתאוס", "site": "קניון מרטווילי (Martvili Canyon)", "hours": "10:00 - 17:30", 
         "adult_cost": 32.25, "child_cost": 32.25, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🛶", "lat": 42.4578, "lon": 42.3767, "details": "שייט בסירות מתנפחות בתוך קניון מים.",
-        "parking": "חניון מוסדר של האתר (חינם, ייתכן טיפים לשומרים מקומיים).",
+        "parking": "חניון מוסדר של האתר (חינם).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Dadiani Cafe (בתוך הקניון)", "Oda Family Winery (אוכל ביתי מנגרלואי אותנטי בהזמנה מראש)"]
     },
     {
         "day": 4, "region": "טביליסי", "site": "פארק מתאצמינדה (Mtatsminda Park)", "hours": "11:00 - 22:00", 
         "adult_cost": 10, "child_cost": 10, "activity_hours": 3.5, "travel_time": 0.5, "icon": "🎢", "lat": 41.6946, "lon": 44.7865, "details": "פארק שעשועים בראש ההר המשקיף על טביליסי.",
-        "parking": "חניון עליון בפארק (תשלום במקום).",
+        "parking": "חניון עליון בפארק.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Funicular Restaurant (מסעדה יוקרתית עם נוף מטורף)", "Doner House"]
     },
     {
         "day": 4, "region": "טביליסי", "site": "רכבל ומצודת נריקלה (Narikala)", "hours": "10:00 - 22:00", 
         "adult_cost": 5, "child_cost": 5, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🏰", "lat": 41.6881, "lon": 44.8093, "details": "רכבל, מצודה ופסל אמא גאורגיה.",
-        "parking": "חניה עירונית באזור Rike Park (תשלום דרך אפליקציית Tbilisi Parking).",
+        "parking": "חניה עירונית באזור Rike Park.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Machakhela (כיכר הבמבה)", "Samikitno (פתוח 24/7, אוכל גאורגי מעולה)"]
     },
     {
         "day": 5, "region": "דשבשי + קחתי", "site": "גשר היהלום בדשבשי", "hours": "10:00 - 19:00", 
         "adult_cost": 49, "child_cost": 49, "activity_hours": 2.5, "travel_time": 2.0, "icon": "💎", "lat": 41.5975, "lon": 44.0253, "details": "גשר זכוכית שקוף מעל קניון עמוק.",
-        "parking": "חניון עפר מסודר בכניסה למתחם (חינם).",
+        "parking": "חניון עפר מסודר בכניסה למתחם.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Diamond Bridge Panorama Restaurant (מסעדה תלויה עם נוף לקניון)"]
     },
     {
         "day": 5, "region": "דשבשי + קחתי", "site": "מנזר בודבה ועיירת האהבה סיגנאגי", "hours": "שעות יום", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.0, "travel_time": 1.5, "icon": "⛪", "lat": 41.6116, "lon": 45.9333, "details": "חומות ציוריות, סמטאות אבן ונוף.",
-        "parking": "חניה מוסדרת בכניסה למנזר וברחובות סיגנאגי (חינם או תשלום סמלי).",
+        "parking": "חניה מוסדרת בכניסה למנזר וברחובות סיגנאגי.",
         "parking_app": "חניה מקומית", "parking_link": "",
         "restaurants": ["Pheasant's Tears (יקב ומסעדה אורגנית מומלצת בסיגנאגי)", "Okro's Wine"]
     },
     {
         "day": 5, "region": "דשבשי + קחתי", "site": "יקב חארבה (Khareba)", "hours": "10:00 - 18:00", 
         "adult_cost": 25, "child_cost": 10, "activity_hours": 1.5, "travel_time": 0.5, "icon": "🍇", "lat": 41.9366, "lon": 45.8361, "details": "מנהרות אבן לאחסון יין וטעימות.",
-        "parking": "חניון ענק ומסודר של היקב (חינם למבקרים).",
+        "parking": "חניון ענק ומסודר של היקב.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Tunnel Restaurant (בתוך המנהרות של היקב)", "Kindzmarauli Marani (בעיר קוור렐ิ)"]
     },
     {
         "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מצודת אננורי ומאגר ז'ינוואלי", "hours": "09:00 - 19:00", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 1.0, "travel_time": 1.5, "icon": "🌊", "lat": 42.1643, "lon": 44.7032, "details": "אגם טורקיז ומצודה היסטורית שמורה.",
-        "parking": "חניה לצד הדרך / חניון עפר ליד המצודה (תשלום מקומי קטן לשומרים).",
+        "parking": "חניה לצד הדרך / חניון עפר ליד המצודה.",
         "parking_app": "תשלום במקום", "parking_link": "",
         "restaurants": ["Pasanauri Khinkali House (בדרך, מומלץ לעצור לחינקלי)", "Ananuri Cafe"]
     },
     {
         "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "אנדרטת גודאורי + רכבת הרים", "hours": "שעות היום", 
         "adult_cost": 20, "child_cost": 20, "activity_hours": 2.0, "travel_time": 1.0, "icon": "🛷", "lat": 42.4925, "lon": 44.4533, "details": "תצפית נוף וגלישה בקרוניות הרים.",
-        "parking": "חניון רחב ידיים לצד האנדרטה (חינם).",
+        "parking": "חניון רחב ידיים לצד האנדרטה.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Gudauri Lodge Restaurant", "Cafe Quadra"]
     },
     {
         "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "כנסיית גרגטי", "hours": "אור יום", 
-        "adult_cost": 60, "child_cost": 60, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🏔️", "lat": 42.6629, "lon": 44.6203, "details": "כנסייה מפורסמת למרגלות הר קזבק (מומלץ ג'יפ מקומי או הליכה).",
-        "parking": "חניה למעלה ליד הכנסייה (עפר, חינם). לרכבים פרטיים מומלץ לחנות למטה בעיירה.",
+        "adult_cost": 60, "child_cost": 60, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🏔️", "lat": 42.6629, "lon": 44.6203, "details": "כנסייה מפורסמת למרגלות הר קזבק.",
+        "parking": "חניה למעלה ליד הכנסייה (עפר).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Mountain Freaks Cafe (בסטפנצמינדה)", "Cafe 5047m"]
     },
     {
         "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "מלון Rooms Kazbegi", "hours": "12:00 - 22:00", 
         "adult_cost": 40, "child_cost": 30, "activity_hours": 1.5, "travel_time": 0.3, "icon": "☕", "lat": 42.6566, "lon": 44.6464, "details": "ארוחה או קפה במרפסת המפורסמת עם נוף להר.",
-        "parking": "חניה מסודרת לאורחי המלון והמסעדה (חינם).",
+        "parking": "חניה מסודרת לאורחי המלון והמסעדה.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Rooms Hotel Restaurant (אוכל אירופאי-גאורגי עילי)", "Sno Cafe"]
     },
     {
         "day": 8, "region": "טביליסי העתיקה", "site": "מרחצאות חמי אורבליאני", "hours": "08:00 - 23:00", 
         "adult_cost": 75, "child_cost": 0, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🛁", "lat": 41.6880, "lon": 44.8115, "details": "חדר פרטי במרחצאות הגופרית.",
-        "parking": "חניון רחוב בתשלום עירוני (ניהול דרך אפליקציית Tbilisi Parking).",
+        "parking": "חניון רחוב בתשלום עירוני.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Culinarium Khasheria (שף לוקה טרזני - מעולה)", "Gastro Chef"]
     },
     {
         "day": 8, "region": "טביליסי העתיקה", "site": "מפל לגווטכבי וגשר השלום", "hours": "24/7", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.0, "travel_time": 0.3, "icon": "🌉", "lat": 41.6865, "lon": 44.8090, "details": "מפל טבעי המסתתר בלב העיר.",
-        "parking": "חניון Rike Park הסמוך (תשלום דרך אפליקציית Tbilisi Parking).",
+        "parking": "חניון Rike Park הסמוך.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Pur Pur (מסעדה וינטג' קסומה במרכז)", "Shavi Lomi (מסעדת גורמה מקומית מדהימה - דורשת הזמנה מראש)"]
     },
@@ -229,15 +229,15 @@ itinerary = [
     {
         "day": 9, "region": "שקווטילי", "site": "פארק המוזיקאים", "hours": "24/7", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🎵", "lat": 41.9167, "lon": 41.7681, "details": "יער קסום עם פסלי מוזיקאים.",
-        "parking": "חניה לצד הפארק ביער (חינם).",
+        "parking": "חניה לצד הפארק ביער.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Magnetic Beach Cafe", "Paragraph Resort Restaurants"]
     },
     {
         "day": 10, "region": "באטומי (סיום)", "site": "שוק הדגים של באטומי", "hours": "09:00 - 20:00", 
         "adult_cost": 40, "child_cost": 30, "activity_hours": 2.0, "travel_time": 0.0, "icon": "🐟", "lat": 41.6495, "lon": 41.6521, "details": "בוחרים דגים ומבשלים במקום.",
-        "parking": "חניון השוק (תשלום באפליקציית Batumi Parking או במקום).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניון השוק.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["שוק הדגים עצמו (בוחרים דג טרי בצד ומבקשים שיבשלו במסעדות שבתוך השוק)", "Station Cafe"]
     }
 ]
@@ -263,7 +263,7 @@ with st.sidebar:
     st.header("🅿️ אפליקציות חניה בגאורגיה")
     st.markdown("""
     * **טביליסי:** [Tbilisi Parking](https://parking.tbilisi.gov.ge/)
-    * **באטומי:** [Batumi Parking](https://batumiparking.ge/)
+    * **באטומי:** [ParkMate Batumi](https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi)
     """)
     
     st.markdown("---")
@@ -281,6 +281,7 @@ with st.sidebar:
             "🚗 מחשבון ניווט וזמני נסיעה",
             "📊 דשבורד עלויות ותקציב",
             "🎒 רשימת ציוד (Packing List)",
+            "🍷 אירוח משפחתי וסופרה",
             "🚨 טיפים לשטח וחירום",
             "🗺️ מפת האטרקציות"
         ]
@@ -311,13 +312,13 @@ df['actual_date'] = df['day'].apply(lambda d: start_date + timedelta(days=d-1))
 hotels_raw = [
     {
         "hotel": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "area": "באטומי",
-        "parking": "חניה פרטית של המלון / חניה ברחוב סמוך (חינם לאורחי המלון על בסיס מקום פנוי).",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking": "חניה פרטית של המלון / חניה ברחוב סמוך.",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Retro (חצ'פורי)", "Fanfan", "Heart of Batumi"]
     },
     {
         "hotel": "Novotel Tbilisi Center", "check_in_day": 3, "check_out_day": 6, "area": "טביליסי",
-        "parking": "חניון תת-קרקעי פרטי של המלון (בתשלום יומי של כ-20-30 לארי).",
+        "parking": "חניון תת-קרקעי פרטי של המלון.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Shavi Lomi", "Culinarium Khasheria", "Pur Pur"]
     },
@@ -329,14 +330,14 @@ hotels_raw = [
     },
     {
         "hotel": "Novotel Tbilisi Center", "check_in_day": 8, "check_out_day": 9, "area": "טביליסי",
-        "parking": "חניון תת-קרקעי פרטי של המלון (בתשלום יומי).",
+        "parking": "חניון תת-קרקעי פרטי של המלון.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Samikitno", "Machakhela"]
     },
     {
         "hotel": "King Suite Black Sea View Hotel", "check_in_day": 9, "check_out_day": 11, "area": "באטומי",
         "parking": "חניה פרטית של המלון / ברחוב סמוך.",
-        "parking_app": "Batumi Parking", "parking_link": "https://batumiparking.ge/",
+        "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Retro", "Chef's Grill"]
     }
 ]
@@ -576,7 +577,38 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
             st.rerun()
 
 # ==========================================
-# תצוגה 6: טיפים לשטח וחירום
+# תצוגה 6: חוויית סופרה ואירוח משפחתי
+# ==========================================
+elif selected_tab == "🍷 אירוח משפחתי וסופרה":
+    st.subheader("🍷 חוויית 'סופרה' וארוחות משפחתיות מסורתיות בגאורגיה")
+    st.markdown("חוויית חובה בטיול! ארוחת משתה גאורגית אותנטית (סופרה) הכוללת מטעמים ביתיים, יינות מקומיים והופעות פולקלור ריבוי-קולות וריקודים סוערים.")
+    st.markdown("---")
+
+    col_sup1, col_sup2 = st.columns(2)
+    with col_sup1:
+        st.markdown("""
+        ### 🍇 חבל קחתי (אזור היין - סיגנאגי ותלביאוי)
+        * **מה מחכה לכם:** יקבים בוטיקיים משפחתיים שבהם מכינים יין בכדים טמונים באדמה (קגוורי). המשפחות מארחות בחצרות ירוקות לארוחות שף ביתיות מלאות כל טוב.
+        * **איפה לחפש / מומלצים:** 
+          * *Pheasant’s Tears (סיגנאגי)* - יקב אורגני מדהים עם אירוח מוקפד ואווירה כפרית.
+          * יקבים משפחתיים קטנים לאורך הדרך בקאחתי (ניתן לתאם דרך המלון או במקום).
+        """)
+    with col_sup2:
+        st.markdown("""
+        ### 🏔️ הרי אג'ריה (אזור באטומי וההרים)
+        * **מה מחכה לכם:** כפרים קסומים בהרים סביב באטומי (כמו אזור Keda). משפחות הרריות מציעות ארוחות כפריות (מאפים מיוחדים, גבינות מקומיות, בשרים) בליווי מוזיקה כפרית.
+        * **טיפ:** מושלם לשילוב ביום טיול מבאטומי לכיוון ההרים הפנימיים.
+        """)
+
+    st.markdown("---")
+    st.markdown("""
+    ### 🏙️ טביליסי והסביבה
+    * **מסעדת Shavi Lomi (טביליסי):** אמנם זו מסעדה ולא בית פרטי, אבל היא מעוצבת בדיוק כמו חצר טביליסאית עתיקה עם אוכל ביתי אגדי ואווירה משפחתית חמה.
+    * **איך מתאמים ערב פולקלור אמיתי?** רוב המשפחות המארחות וההופעות הפרטיות דורשות **תיאום מראש** של כמה ימים. הדרך הקלה והטובה ביותר היא לבקש מבעל המלון שבו תלונו בטביליסי או בבאטומי להרים טלפון למארחים מקומיים שהם מכירים ולסדר עבורכם ערב סופרה מושלם.
+    """)
+
+# ==========================================
+# תצוגה 7: טיפים לשטח וחירום
 # ==========================================
 elif selected_tab == "🚨 טיפים לשטח וחירום":
     st.subheader("🚨 מידע שימושי, חניות, טיפים לנהיגה ומספרי חירום")
@@ -590,9 +622,9 @@ elif selected_tab == "🚨 טיפים לשטח וחירום":
         * **משטרה תיירותית:** חינם דרך מוקד 112
         * **שגרירות ישראל בטביליסי:** `+995 32 255 65 00`
         
-        ### 🅿️ טיפים לתשלום חניה בעים:
+        ### 🅿️ טיפים לתשלום חניה בעיר:
         * בטביליסי ובבאטומי אסור להחנות איפה שמסומן באדום-לבן או צהוב בלי אישור.
-        * מומלץ להוריד מראש את אפליקציות החניה הרשמיות (`Tbilisi Parking` / `Batumi Parking`) ולהזין מספר רכב ואשראי.
+        * מומלץ להוריד מראש את אפליקציות החניה הרשמיות (`Tbilisi Parking` / `ParkMate Batumi`) ולהזין מספר רכב ואשראי.
         """)
     with col_t2:
         st.markdown("""
@@ -603,7 +635,7 @@ elif selected_tab == "🚨 טיפים לשטח וחירום":
         """)
 
 # ==========================================
-# תצוגה 7: מפה אינטראקטיבית
+# תצוגה 8: מפה אינטראקטיבית
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
