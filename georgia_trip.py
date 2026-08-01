@@ -48,11 +48,21 @@ def get_weather(lat, lon):
     return "לא ניתן לטעון תחזית כרגע"
 
 # ==========================================
-# עיצוב מותאם אישית (CSS) - צבעוני ו-RTL
+# עיצוב מותאם אישית (CSS) - פתרון גלילה לנייד ו-RTL
 # ==========================================
 st.markdown("""
 <style>
     .block-container { direction: rtl; text-align: right; }
+    
+    /* תיקון גלילה בסרגל הצד במובייל */
+    section[data-testid="stSidebar"] {
+        overflow-y: auto !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        height: 100%;
+        overflow-y: auto !important;
+    }
+
     div[data-testid="metric-container"] { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-right: 5px solid #28a745; }
     div[data-testid="metric-container"] label, div[data-testid="metric-container"] div { color: #111111 !important; }
     .site-card { background-color: #ffffff !important; border: 1px solid #e0e0e0; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); margin-bottom: 20px; border-right: 6px solid #ff4b4b; }
@@ -243,7 +253,7 @@ itinerary = [
 ]
 
 # ==========================================
-# סרגל צד - תאריכים, ניווט וסינון
+# סרגל צד (Sidebar) - עכשיו עם כפתורי בחירה (Radio) וגלילה חלקה
 # ==========================================
 with st.sidebar:
     try:
@@ -260,7 +270,7 @@ with st.sidebar:
     children = st.number_input("מספר ילדים", min_value=0, value=2, step=1)
     
     st.markdown("---")
-    st.header("🅿️ אפליקציות חניה בגאורגיה")
+    st.header("🅿️ אפליקציות חניה")
     st.markdown("""
     * **טביליסי:** [Tbilisi Parking](https://parking.tbilisi.gov.ge/)
     * **באטומי:** [ParkMate Batumi](https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi)
@@ -273,7 +283,8 @@ with st.sidebar:
     st.markdown("---")
     st.header("⚙️ בקרת מסלול")
     
-    selected_tab = st.selectbox(
+    # השתמשנו ב-st.radio במקום st.selectbox כדי שיהיה נוח וגליל במובייל בלי להיחתך!
+    selected_tab = st.radio(
         "בחר מצב תצוגה:", 
         options=[
             "📅 פירוט מסלול ואטרקציות", 
@@ -284,7 +295,8 @@ with st.sidebar:
             "🍷 אירוח משפחתי וסופרה",
             "🚨 טיפים לשטח וחירום",
             "🗺️ מפת האטרקציות"
-        ]
+        ],
+        index=0
     )
     
     st.markdown("---")
