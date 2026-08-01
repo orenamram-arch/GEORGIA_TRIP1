@@ -268,7 +268,7 @@ df['total_cost_gel'] = (adults * df['adult_cost']) + (children * df['child_cost'
 df['total_hours'] = df['activity_hours'] + df['travel_time']
 df['actual_date'] = df['day'].apply(lambda d: start_date + timedelta(days=d-1))
 
-# בסיס נתונים מעודכן למלונות (כולל חניה ומסעדות)
+# בסיס נתונים מעודכן למלונות
 hotels_raw = [
     {
         "מלון": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "אזור": "באטומי",
@@ -334,7 +334,7 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             rest_encoded = urllib.parse.quote(f"{rest}, {row['region']}, Georgia")
             restaurants_html += f"&bull; <a href='https://www.google.com/maps/search/?api=1&query={rest_encoded}' target='_blank'>{rest}</a><br>"
         
-        card_html = (
+        st.markdown(
             f"<div class='site-card'>"
             f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> יום {row['day']} | {row['site']}</h2>"
             f"<p><b>📍 אזור:</b> {row['region']}</p>"
@@ -346,9 +346,9 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             f"<p><b>🅿️ מידע על חניה:</b> {row['parking']}</p>"
             f"<p><b>🍽️ מסעדות מומלצות בסביבה:</b><br>{restaurants_html}</p>"
             f"</div>"
-            f"</div>"
+            f"</div>",
+            unsafe_allow_html=True
         )
-        st.markdown(card_html, unsafe_allow_html=True)
 
 # ==========================================
 # תצוגה 2: מלונות וניווט
@@ -357,7 +357,7 @@ elif selected_tab == "🏨 מלונות":
     st.subheader("🏨 בתי המלון שלנו, חניות ומסעדות סביבם")
     
     for idx, h in df_hotels.iterrows():
-        hotel_html = (
+        st.markdown(
             f"<div class='site-card' style='border-right-color: #3b82f6;'>"
             f"<h2>🏨 {h['מלון']} ({h['אזור']})</h2>"
             f"<p><b>📅 תקופת שהייה:</b> {h['צ'ק אין']} עד {h['צ'ק אאוט']}</p>"
@@ -365,9 +365,9 @@ elif selected_tab == "🏨 מלונות":
             f"<p><b>🅿️ הסדר חניה במלון:</b> {h['חניה']}</p>"
             f"<p><b>🍽️ מסעדות באזור המלון:</b> {h['מסעדות באזור']}</p>"
             f"</div>"
-            f"</div>"
+            f"</div>",
+            unsafe_allow_html=True
         )
-        st.markdown(hotel_html, unsafe_allow_html=True)
     
     st.markdown("---")
     st.subheader("🚗 תכנון נסיעה מהמלון")
