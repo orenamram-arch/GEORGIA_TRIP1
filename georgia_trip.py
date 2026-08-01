@@ -24,9 +24,7 @@ def calculate_travel_estimation(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     
     aerial_distance = R * c
-    # מרחק כביש בגאורגיה (הרים ופיתולים) הוא לרוב כ-1.4 מהמרחק האווירי
     road_distance = aerial_distance * 1.4 
-    # מהירות ממוצעת משוערת בכבישי גאורגיה היא כ-55 קמ"ש
     estimated_hours = road_distance / 55.0 
     
     return road_distance, estimated_hours
@@ -137,7 +135,7 @@ itinerary = [
     {
         "day": 4, "region": "טביליסי", "site": "רכבל ומצודת נריקלה (Narikala)", "hours": "10:00 - 22:00", 
         "adult_cost": 5, "child_cost": 5, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🏰", "lat": 41.6881, "lon": 44.8093, "details": "רכבל, מצודה ופסל אמא גאורגיה.",
-        "parking": "אין חניה נוחה באתר עצמו. מומלץ לחנות באזור' Rike Park' למטה (חניה בתשלום עירוני).",
+        "parking": "אין חניה נוחה באתר עצמו. מומלץ לחנות באזור Rike Park למטה (חניה בתשלום עירוני).",
         "restaurants": ["Machakhela (כיכר הבמבה)", "Samikitno (פתוח 24/7, אוכל גאורגי מעולה)"]
     },
     {
@@ -192,7 +190,7 @@ itinerary = [
         "day": 8, "region": "טביליסי העתיקה", "site": "מפל לגווטכבי וגשר השלום", "hours": "24/7", 
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.0, "travel_time": 0.3, "icon": "🌉", "lat": 41.6865, "lon": 44.8090, "details": "מפל טבעי המסתתר בלב העיר.",
         "parking": "חניון Rike Park הסמוך (בתשלום עירוני).",
-        "restaurants": ["Pur Pur (מסעדה וינטג' קסדואית במרכז)", "Shavi Lomi (מסעדת גורמה מקומית מדהימה - דורשת הזמנה מראש)"]
+        "restaurants": ["Pur Pur (מסעדה וינטג' קסומה במרכז)", "Shavi Lomi (מסעדת גורמה מקומית מדהימה - דורשת הזמנה מראש)"]
     },
     {
         "day": 9, "region": "שקווטילי", "site": "הפארק הדנדרולוגי", "hours": "10:00 - 18:00", 
@@ -331,7 +329,6 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
         date_str = row['actual_date'].strftime("%d/%m/%Y")
         item_cost_ils = row['total_cost_gel'] * exchange_rate
         
-        # יצירת לינקים לחיפוש מהיר של המסעדות ב-Google Maps
         restaurants_html = ""
         for rest in row['restaurants']:
             rest_encoded = urllib.parse.quote(f"{rest}, {row['region']}, Georgia")
