@@ -6,9 +6,66 @@ from datetime import timedelta, date
 import math
 import urllib.parse
 import requests
+import json
+import os
 
 # הגדרת תצורת העמוד (חייב להיות ראשון)
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
+
+# ==========================================
+# ניהול קובץ שמירה מקומי (JSON)
+# ==========================================
+DATA_FILE = "georgia_trip_data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return None
+
+def save_data(data):
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+    except:
+        pass
+
+# טעינת נתונים קיימים או יצירת ברירת מחדל
+saved_data = load_data()
+
+if 'expenses' not in st.session_state:
+    if saved_data and "expenses" in saved_data:
+        st.session_state.expenses = saved_data["expenses"]
+    else:
+        st.session_state.expenses = [
+            {"desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50},
+            {"desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120}
+        ]
+
+if 'packing_list' not in st.session_state:
+    if saved_data and "packing_list" in saved_data:
+        st.session_state.packing_list = saved_data["packing_list"]
+    else:
+        st.session_state.packing_list = [
+            {"item": "דרכונים וביטוח רפואי", "checked": True},
+            {"item": "כרטיסי טיסה ושוברים למלונות", "checked": True},
+            {"item": "כסף מזומן (דולרים חדשים + לארי)", "checked": False},
+            {"item": "תרופות אישיות ועזרה ראשונה", "checked": False},
+            {"item": "מתאמים לחשמל ובנקים ניידים", "checked": False},
+            {"item": "מעילים חמים (לגודאורי וקזבגי)", "checked": False},
+            {"item": "נעלי הליכה נוחות", "checked": False}
+        ]
+
+def persist_all():
+    """שומר את המצב הנוכחי לקובץ המקומי"""
+    data = {
+        "expenses": st.session_state.expenses,
+        "packing_list": st.session_state.packing_list
+    }
+    save_data(data)
 
 # ==========================================
 # פונקציית עזר: חישוב מרחק וזמן משוער בין קואורדינטות (נוסחת Haversine)
@@ -75,26 +132,6 @@ st.markdown("""
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
 st.markdown("ניהול מסלול מלא, תקציב הוצאות, ציוד ארוז, מזג אוויר חי, חניות, ארוחות משפחתיות וניווט.")
 st.markdown("---")
-
-# ==========================================
-# הגדרת Session State עבור הוצאות וציוד
-# ==========================================
-if 'expenses' not in st.session_state:
-    st.session_state.expenses = [
-        {"desc": "מונית משדה התעופה", "category": "תחבורה", "amount": 50},
-        {"desc": "ארוחת ערב ראשונה", "category": "אוכל", "amount": 120}
-    ]
-
-if 'packing_list' not in st.session_state:
-    st.session_state.packing_list = {
-        "דרכונים וביטוח רפואי": True,
-        "כרטיסי טיסה ושוברים למלונות": True,
-        "כסף מזומן (דולרים חדשים + לארי)": False,
-        "תרופות אישיות ועזרה ראשונה": False,
-        "מתאמים לחשמל ובנקים ניידים": False,
-        "מעילים חמים (לגודאורי וקזבגי)": False,
-        "נעלי הליכה נוחות": False
-    }
 
 # ==========================================
 # מסד הנתונים המלא של הטיול
@@ -253,7 +290,7 @@ itinerary = [
 ]
 
 # ==========================================
-# סרגל צד (Sidebar) - עכשיו עם כפתורי בחירה (Radio) וגלילה חלקה
+# סרגל צד (Sidebar) - כפתורי בחירה (Radio) וגלילה חלקה
 # ==========================================
 with st.sidebar:
     try:
@@ -283,7 +320,6 @@ with st.sidebar:
     st.markdown("---")
     st.header("⚙️ בקרת מסלול")
     
-    # השתמשנו ב-st.radio במקום st.selectbox כדי שיהיה נוח וגליל במובייל בלי להיחתך!
     selected_tab = st.radio(
         "בחר מצב תצוגה:", 
         options=[
@@ -531,7 +567,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
                 """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 4: דשבורד עלויות ותקציב אמת
+# תצוגה 4: דשבורד עלויות ותקציב אמת (עם שמירה לקובץ)
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות ותקציב":
     st.subheader("📊 דשבורד עלויות, אטרקציות והוצאות בפועל")
@@ -550,17 +586,16 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
     
     st.markdown("---")
     st.subheader("➕ הוסף הוצאה חדשה בפועל (אוכל, דלק, חניה, מוניות...)")
-    with st.form("add_expense_form"):
+    with st.form("add_expense_form", clear_on_submit=True):
         e_desc = st.text_input("תיאור ההוצאה (למשל: תדלוק, חניה בבאטומי):")
         e_cat = st.selectbox("קטגוריה:", ["אוכל", "תחבורה ודלק", "חניה", "קניות", "שונות"])
         e_amount = st.number_input("סכום בלארי (GEL):", min_value=1.0, value=20.0)
-        if st.form_submit_button("הוסף הוצאה לרשימה"):
-            if e_desc.strip():
-                st.session_state.expenses.append({"desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
-                st.success("ההוצאה נוספה בהצלחה!")
-                st.rerun()
-            else:
-                st.warning("נא להזין תיאור להוצאה.")
+        submitted = st.form_submit_button("הוסף הוצאה לרשימה")
+        if submitted and e_desc.strip():
+            st.session_state.expenses.append({"desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
+            persist_all()  # שמירה מיידית לקובץ
+            st.success("ההוצאה נוספה ונשמרה לצמיתות!")
+            st.rerun()
                 
     if st.session_state.expenses:
         st.markdown("### 📋 פירוט ההוצאות בשטח:")
@@ -568,25 +603,37 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
         st.dataframe(df_exp, use_container_width=True, hide_index=True)
 
 # ==========================================
-# תצוגה 5: רשימת ציוד (Packing List)
+# תצוגה 5: רשימת ציוד (Packing List) - עם שמירה לקובץ
 # ==========================================
 elif selected_tab == "🎒 רשימת ציוד (Packing List)":
     st.subheader("🎒 רשימת ציוד ומזוודות למשפחה")
-    st.markdown("סמן את הפריטים שכבר ארזתם כדי לא לשכוח שום דבר חשוב בבית:")
+    st.markdown("סמן את הפריטים שכבר ארזתם – השינויים נשמרים באופן אוטומטי לצמיתות:")
     st.markdown("---")
     
-    for item, checked in list(st.session_state.packing_list.items()):
-        new_val = st.checkbox(item, value=checked)
-        st.session_state.packing_list[item] = new_val
+    data_changed = False
+    for i, item_dict in enumerate(st.session_state.packing_list):
+        new_status = st.checkbox(item_dict["item"], value=item_dict["checked"], key=f"pack_{i}")
+        if new_status != item_dict["checked"]:
+            st.session_state.packing_list[i]["checked"] = new_status
+            data_changed = True
+            
+    if data_changed:
+        persist_all()  # שמירה מיידית לקובץ ברגע שמשנים סימון
         
     st.markdown("---")
     st.subheader("➕ הוסף פריט חדש לרשימה")
-    new_gear = st.text_input("שם הפריט:")
-    if st.button("הוסף לפריטים"):
-        if new_gear.strip() and new_gear not in st.session_state.packing_list:
-            st.session_state.packing_list[new_gear.strip()] = False
-            st.success("הפריט נוסף!")
-            st.rerun()
+    with st.form("add_gear_form", clear_on_submit=True):
+        new_gear = st.text_input("שם הפריט החדש:")
+        gear_submitted = st.form_submit_button("הוסף לפריטים")
+        if gear_submitted and new_gear.strip():
+            existing_items = [d["item"] for d in st.session_state.packing_list]
+            if new_gear.strip() not in existing_items:
+                st.session_state.packing_list.append({"item": new_gear.strip(), "checked": False})
+                persist_all()  # שמירה מיידית לקובץ
+                st.success("הפריט נוסף ונשמר לצמיתות!")
+                st.rerun()
+            else:
+                st.warning("הפריט כבר קיים ברשימה.")
 
 # ==========================================
 # תצוגה 6: חוויית סופרה ואירוח משפחתי
