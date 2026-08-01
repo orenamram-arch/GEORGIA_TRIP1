@@ -33,8 +33,18 @@ def save_data(data):
     except:
         pass
 
-# טעינת נתונים קיימים או יצירת ברירת מחדל
+# טעינת נתונים קיימים מקובץ השמירה
 saved_data = load_data()
+
+# הגדרת תאריך תחילת הטיול (עם שמירה)
+if 'start_date' not in st.session_state:
+    if saved_data and "start_date" in saved_data:
+        try:
+            st.session_state.start_date = date.fromisoformat(saved_data["start_date"])
+        except:
+            st.session_state.start_date = date.today()
+    else:
+        st.session_state.start_date = date.today()
 
 if 'expenses' not in st.session_state:
     if saved_data and "expenses" in saved_data:
@@ -60,8 +70,9 @@ if 'packing_list' not in st.session_state:
         ]
 
 def persist_all():
-    """שומר את המצב הנוכחי לקובץ המקומי"""
+    """שומר את כל הנתונים הדינאמיים לקובץ המקומי לצמיתות"""
     data = {
+        "start_date": st.session_state.start_date.isoformat(),
         "expenses": st.session_state.expenses,
         "packing_list": st.session_state.packing_list
     }
@@ -290,7 +301,7 @@ itinerary = [
 ]
 
 # ==========================================
-# סרגל צד (Sidebar) - כפתורי בחירה (Radio) וגלילה חלקה
+# סרגל צד (Sidebar) - כפתורי בחירה וגלילה חלקה
 # ==========================================
 with st.sidebar:
     try:
@@ -301,7 +312,12 @@ with st.sidebar:
     st.markdown("---")
     st.header("📅 תאריכים והרכב")
     
-    start_date = st.date_input("תאריך תחילת הטיול:", value=date.today())
+    # תאריך תחילת הטיול עם שמירה אוטומטית לקובץ
+    new_start_date = st.date_input("תאריך תחילת הטיול:", value=st.session_state.start_date)
+    if new_start_date != st.session_state.start_date:
+        st.session_state.start_date = new_start_date
+        persist_all()
+        st.rerun()
     
     adults = st.number_input("מספר מבוגרים", min_value=1, value=2, step=1)
     children = st.number_input("מספר ילדים", min_value=0, value=2, step=1)
@@ -340,7 +356,7 @@ with st.sidebar:
     max_days = max([item['day'] for item in itinerary])
     day_options = ["הכל"]
     for d in range(1, max_days + 1):
-        actual_date = start_date + timedelta(days=d-1)
+        actual_date = st.session_state.start_date + timedelta(days=d-1)
         day_options.append(f"יום {d} ({actual_date.strftime('%d/%m/%Y')})")
         
     selected_day_str = st.selectbox("סינון לפי יום בטיול:", options=day_options)
@@ -354,7 +370,7 @@ with st.sidebar:
 df = pd.DataFrame(itinerary)
 df['total_cost_gel'] = (adults * df['adult_cost']) + (children * df['child_cost'])
 df['total_hours'] = df['activity_hours'] + df['travel_time']
-df['actual_date'] = df['day'].apply(lambda d: start_date + timedelta(days=d-1))
+df['actual_date'] = df['day'].apply(lambda d: st.session_state.start_date + timedelta(days=d-1))
 
 # בסיס נתונים למלונות
 hotels_raw = [
@@ -392,8 +408,8 @@ hotels_raw = [
 
 hotels_processed = []
 for h in hotels_raw:
-    ci_date = start_date + timedelta(days=h["check_in_day"]-1)
-    co_date = start_date + timedelta(days=h["check_out_day"]-1)
+    ci_date = st.session_state.start_date + timedelta(days=h["check_in_day"]-1)
+    co_date = st.session_state.start_date + timedelta(days=h["check_out_day"]-1)
     
     parking_display = h["parking"]
     if h["parking_link"]:
@@ -567,7 +583,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
                 """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 4: דשבורד עלויות ותקציב אמת (עם שמירה לקובץ)
+# תצוגה 4: דשבורד עלויות ותקציב אמת
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות ותקציב":
     st.subheader("📊 דשבורד עלויות, אטרקציות והוצאות בפועל")
@@ -593,7 +609,7 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
         submitted = st.form_submit_button("הוסף הוצאה לרשימה")
         if submitted and e_desc.strip():
             st.session_state.expenses.append({"desc": e_desc.strip(), "category": e_cat, "amount": e_amount})
-            persist_all()  # שמירה מיידית לקובץ
+            persist_all()
             st.success("ההוצאה נוספה ונשמרה לצמיתות!")
             st.rerun()
                 
@@ -603,7 +619,7 @@ elif selected_tab == "📊 דשבורד עלויות ותקציב":
         st.dataframe(df_exp, use_container_width=True, hide_index=True)
 
 # ==========================================
-# תצוגה 5: רשימת ציוד (Packing List) - עם שמירה לקובץ
+# תצוגה 5: רשימת ציוד (Packing List)
 # ==========================================
 elif selected_tab == "🎒 רשימת ציוד (Packing List)":
     st.subheader("🎒 רשימת ציוד ומזוודות למשפחה")
@@ -618,7 +634,7 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
             data_changed = True
             
     if data_changed:
-        persist_all()  # שמירה מיידית לקובץ ברגע שמשנים סימון
+        persist_all()
         
     st.markdown("---")
     st.subheader("➕ הוסף פריט חדש לרשימה")
@@ -629,7 +645,7 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
             existing_items = [d["item"] for d in st.session_state.packing_list]
             if new_gear.strip() not in existing_items:
                 st.session_state.packing_list.append({"item": new_gear.strip(), "checked": False})
-                persist_all()  # שמירה מיידית לקובץ
+                persist_all()
                 st.success("הפריט נוסף ונשמר לצמיתות!")
                 st.rerun()
             else:
