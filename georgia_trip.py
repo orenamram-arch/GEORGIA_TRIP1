@@ -97,6 +97,23 @@ if 'uploaded_files_meta' not in st.session_state:
     else:
         st.session_state.uploaded_files_meta = []
 
+if 'contacts_list' not in st.session_state:
+    if saved_data and "contacts_list" in saved_data:
+        st.session_state.contacts_list = saved_data["contacts_list"]
+    else:
+        st.session_state.contacts_list = [
+            {"name": "מוקד חירום כללי בגאורגיה", "phone": "112", "role": "משטרה, אמבולנס, כיבוי"},
+            {"name": "שגרירות ישראל בטביליסי", "phone": "+995 32 255 65 00", "role": "שגרירות / חירום מדיני"},
+            {"name": "חברת השכרת רכב", "phone": "+995 ...", "role": "תמיכה ותקלות רכב"},
+            {"name": "ביטוח רפואי (מוקד חו\"ל)", "phone": "+972 ...", "role": "פתיחת תביעות וייעוץ רפואי"}
+        ]
+
+if 'total_budget_gel' not in st.session_state:
+    if saved_data and "total_budget_gel" in saved_data:
+        st.session_state.total_budget_gel = saved_data["total_budget_gel"]
+    else:
+        st.session_state.total_budget_gel = 4000.0
+
 def persist_all():
     """שומר את כל הנתונים הדינאמיים לקובץ המקומי לצמיתות"""
     data = {
@@ -105,7 +122,9 @@ def persist_all():
         "packing_list": st.session_state.packing_list,
         "tasks_list": st.session_state.tasks_list,
         "journal_notes": st.session_state.journal_notes,
-        "uploaded_files_meta": st.session_state.uploaded_files_meta
+        "uploaded_files_meta": st.session_state.uploaded_files_meta,
+        "contacts_list": st.session_state.contacts_list,
+        "total_budget_gel": st.session_state.total_budget_gel
     }
     save_data(data)
 
@@ -169,7 +188,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🇬🇪 דשבורד טיול משפחתי לגאורגיה")
-st.markdown("ניהול מסלול מלא, תקציב הוצאות, פיצול תשלומים, ציוד ארוז, משימות מנהליות, יומן מסע וניהול מסמכים.")
+st.markdown("ניהול מסלול מלא, תקציב הוצאות, פיצול תשלומים, ציוד ארוז, משימות מנהליות, יומן מסע וניהול מסמכים ואנשי קשר.")
 
 # ==========================================
 # ווידג'ט ספירה לאחור (Countdown) בראש העמוד
@@ -375,6 +394,13 @@ with st.sidebar:
     children = st.number_input("מספר ילדים", min_value=0, value=2, step=1)
     
     st.markdown("---")
+    st.header("💰 בקרת תקציב כללי")
+    new_budget = st.number_input("תקציב כולל מוגדר (GEL):", min_value=100.0, value=float(st.session_state.total_budget_gel), step=100.0)
+    if new_budget != st.session_state.total_budget_gel:
+        st.session_state.total_budget_gel = new_budget
+        persist_all()
+        
+    st.markdown("---")
     st.header("💱 המרת מטבע מהירה")
     gel_input = st.number_input("סכום בלארי (GEL):", min_value=0.0, value=100.0, step=10.0)
     exchange_rate = st.number_input("שער לארי לשקל:", value=1.38, step=0.01)
@@ -395,6 +421,7 @@ with st.sidebar:
             "📋 משימות טרום-טיול",
             "📓 יומן מסע אישי",
             "📄 שוברים ומסמכים דיגיטליים",
+            "📞 אנשי קשר וחירום",
             "🍷 אירוח משפחתי וסופרה",
             "🚨 חירום וטיפים לשטח",
             "🗺️ מפת האטרקציות"
@@ -427,7 +454,9 @@ with st.sidebar:
         "packing_list": st.session_state.packing_list,
         "tasks_list": st.session_state.tasks_list,
         "journal_notes": st.session_state.journal_notes,
-        "uploaded_files_meta": st.session_state.uploaded_files_meta
+        "uploaded_files_meta": st.session_state.uploaded_files_meta,
+        "contacts_list": st.session_state.contacts_list,
+        "total_budget_gel": st.session_state.total_budget_gel
     }, ensure_ascii=False, indent=4)
     
     st.download_button(
@@ -657,7 +686,7 @@ elif selected_tab == "🚗 מחשבון ניווט וזמני נסיעה":
 # תצוגה 4: דשבורד עלויות ופיצול תשלומים
 # ==========================================
 elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים":
-    st.subheader("📊 דשבורד עלויות, פיצול הוצאות משפחתי וניהול בשטח")
+    st.subheader("📊 דשבורד עלויות, פיצול הוצאות משפחתי ובקרת תקציב")
     st.markdown("---")
     
     total_cost_gel = filtered_df['total_cost_gel'].sum()
@@ -666,6 +695,18 @@ elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים
     actual_spent_gel = sum([e['amount'] for e in st.session_state.expenses])
     actual_spent_ils = actual_spent_gel * exchange_rate
     
+    # מד התקדמות תקציב
+    budget_limit = st.session_state.total_budget_gel
+    budget_progress = min(actual_spent_gel / budget_limit, 1.0) if budget_limit > 0 else 0
+    
+    st.markdown(f"### 🎯 מעקב תקציב: {actual_spent_gel:,.0f} GEL מתוך {budget_limit:,.0f} GEL מוגדרים")
+    st.progress(budget_progress)
+    if actual_spent_gel > budget_limit:
+        st.warning("⚠️ שימו לב! חרגתם מהתקציב שהוגדר לטיול.")
+    else:
+        st.success(f"✨ נותרו עוד {budget_limit - actual_spent_gel:,.0f} GEL בתקציב.")
+
+    st.markdown("---")
     col1, col2, col3 = st.columns(3)
     col1.metric("💰 עלות אטרקציות תאורטית", f"{total_cost_gel:,.0f} GEL", f"~ {total_cost_ils:,.0f} ₪")
     col2.metric("קטגוריית הוצאות שוטפות", f"{actual_spent_gel:,.0f} GEL", f"~ {actual_spent_ils:,.0f} ₪")
@@ -822,14 +863,13 @@ elif selected_tab == "📓 יומן מסע אישי":
         st.success("💾 השינויים ביומן נשמרו אוטומטית!")
 
 # ==========================================
-# תצוגה 8: שוברים ומסמכים דיגיטליים (כולל העלאת קבצים)
+# תצוגה 8: שוברים ומסמכים דיגיטליים
 # ==========================================
 elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     st.subheader("📄 מרכז מסמכים, שוברים והעלאת קבצים")
     st.markdown("כאן תוכלו להעלות ולרכז את כל האישורים, כרטיסי הטיסה, פוליסות הביטוח ושוברי המלונות שלכם.")
     st.markdown("---")
     
-    # אזור העלאת קבצים חדשים
     st.markdown("### 📤 העלאת קובץ חדש (PDF, תמונות, מסמכים)")
     uploaded_file = st.file_uploader("בחר קובץ להעלאה:", type=["pdf", "png", "jpg", "jpeg", "txt"])
     file_category = st.selectbox("בחר סוג מסמך:", ["טיסות", "ביטוח רפואי", "מלון", "השכרת רכב", "שונות"])
@@ -840,7 +880,6 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
-            # בדיקה האם הקובץ כבר קיים ברשימת המטא-דאטה
             exists_idx = next((i for i, item in enumerate(st.session_state.uploaded_files_meta) if item["filename"] == uploaded_file.name), None)
             file_info = {
                 "filename": uploaded_file.name,
@@ -889,15 +928,50 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
                     st.success("הקובץ נמחק!")
                     st.rerun()
 
+# ==========================================
+# תצוגה 9: אנשי קשר וחירום (כולל הוספה ומחיקה)
+# ==========================================
+elif selected_tab == "📞 אנשי קשר וחירום":
+    st.subheader("📞 ספריית אנשי קשר, מלונות וגורמי חירום")
+    st.markdown("כאן תוכלו לשמור, להוסיף ולמחוק את כל מספרי הטלפון החשובים שתרצו שיהיו זמינים בשטח:")
     st.markdown("---")
-    st.markdown("""
-    ### ℹ️ קישורים ומידע כללי:
-    * **כרטיסי טיסה (הלוך ושוב):** מומלץ להעלות את ה-PDF של כרטיסי הטיסה לכאן לגישה מהירה גם ללא קליטה בשדה התעופה.
-    * **פוליסת ביטוח רפואי לחו\"ל:** חובה לשמור פה את צילום הפוליסה ומוקד החירום.
-    """)
+    
+    if st.session_state.contacts_list:
+        for idx, contact in enumerate(st.session_state.contacts_list):
+            c_col1, c_col2, c_col3 = st.columns([2, 2, 1])
+            with c_col1:
+                st.markdown(f"**👤 {contact['name']}**<br><span style='color:gray;'>{contact.get('role', '')}</span>", unsafe_allow_html=True)
+            with c_col2:
+                st.markdown(f"📞 <b>{contact['phone']}</b>", unsafe_allow_html=True)
+            with c_col3:
+                if st.button("🗑️ מחק", key=f"del_contact_{idx}"):
+                    st.session_state.contacts_list.pop(idx)
+                    persist_all()
+                    st.success("איש הקשר נמחק!")
+                    st.rerun()
+            st.markdown("---")
+    else:
+        st.info("אין אנשי קשר שמורים כרגע.")
+
+    st.subheader("➕ הוסף איש קשר חדש")
+    with st.form("add_contact_form", clear_on_submit=True):
+        c_name = st.text_input("שם איש הקשר / הגורם (למשל: נהג מונית אמין / מלון באטומי):")
+        c_phone = st.text_input("מספר טלפון (כולל קידומת):")
+        c_role = st.text_input("תפקיד או הערה (למשל: זמין 24/7):")
+        contact_submitted = st.form_submit_button("הוסף איש קשר")
+        
+        if contact_submitted and c_name.strip() and c_phone.strip():
+            st.session_state.contacts_list.append({
+                "name": c_name.strip(),
+                "phone": c_phone.strip(),
+                "role": c_role.strip()
+            })
+            persist_all()
+            st.success("איש הקשר נוסף ונשמר לצמיתות!")
+            st.rerun()
 
 # ==========================================
-# תצוגה 9: חוויית סופרה ואירוח משפחתי
+# תצוגה 10: חוויית סופרה ואירוח משפחתי
 # ==========================================
 elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     st.subheader("🍷 חוויית 'סופרה' וארוחות משפחתיות מסורתיות בגאורגיה")
@@ -928,7 +1002,7 @@ elif selected_tab == "🍷 אירוח משפחתי וסופרה":
     """)
 
 # ==========================================
-# תצוגה 10: חירום וטיפים לשטח
+# תצוגה 11: חירום וטיפים לשטח
 # ==========================================
 elif selected_tab == "🚨 חירום וטיפים לשטח":
     st.subheader("🚨 מספרי חירום, עזרה ראשונה וטיפים לנהיגה בהרים")
@@ -962,7 +1036,7 @@ elif selected_tab == "🚨 חירום וטיפים לשטח":
     """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 11: מפה אינטראקטיבית
+# תצוגה 12: מפה אינטראקטיבית
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
