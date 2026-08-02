@@ -31,6 +31,7 @@ if not os.path.exists(DOCS_DIR):
 
 def load_data():
     try:
+        # שליפה ישירה מ-Supabase ללא מטמון ישן
         response = supabase.table("app_data").select("content").eq("key", "georgia_trip_main_data").execute()
         if response.data and len(response.data) > 0:
             return response.data[0]["content"]
@@ -40,11 +41,13 @@ def load_data():
 
 def save_data(data):
     try:
-        # פקודת upsert מעדכנת את השורה אם קיימת, או יוצרת אותה אוטומטית אם אינה קיימת
-        supabase.table("app_data").upsert({"key": "georgia_trip_main_data", "content": data}).execute()
-        st.toast("💾 נשמר בהצלחה ב-Supabase!", icon="✅")
+        supabase.table("app_data").upsert(
+            {"key": "georgia_trip_main_data", "content": data},
+            on_conflict="key"
+        ).execute()
+        st.toast("💾 נשמר בהצלחה בענן Supabase!", icon="✅")
     except Exception as e:
-        st.error(f"שגיאה קריטית בשמירת הנתונים ב-Supabase: {e}")
+        st.error(f"שגיאה בשמירת הנתונים ב-Supabase: {e}")
 
 # טעינת נתונים קיימים מ-Supabase
 saved_data = load_data()
