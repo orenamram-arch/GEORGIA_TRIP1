@@ -31,7 +31,7 @@ if not os.path.exists(DOCS_DIR):
 
 def load_data():
     try:
-        # שליפה ישירה מ-Supabase ללא מטמון ישן
+        # שליפה ישירה מ-Supabase לפי מפתח הטיול לגאורגיה
         response = supabase.table("app_data").select("content").eq("key", "georgia_trip_main_data").execute()
         if response.data and len(response.data) > 0:
             return response.data[0]["content"]
