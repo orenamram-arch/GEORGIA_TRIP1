@@ -35,14 +35,16 @@ def load_data():
         if response.data and len(response.data) > 0:
             return response.data[0]["content"]
     except Exception as e:
-        st.warning(f"שגיאה בטעינת הנתונים מ-Supabase: {e}")
+        st.error(f"שגיאה בטעינת הנתונים מ-Supabase: {e}")
     return None
 
 def save_data(data):
     try:
+        # פקודת upsert מעדכנת את השורה אם קיימת, או יוצרת אותה אוטומטית אם אינה קיימת
         supabase.table("app_data").upsert({"key": "georgia_trip_main_data", "content": data}).execute()
+        st.toast("💾 נשמר בהצלחה ב-Supabase!", icon="✅")
     except Exception as e:
-        st.error(f"שגיאה בשמירת הנתונים ב-Supabase: {e}")
+        st.error(f"שגיאה קריטית בשמירת הנתונים ב-Supabase: {e}")
 
 # טעינת נתונים קיימים מ-Supabase
 saved_data = load_data()
