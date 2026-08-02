@@ -31,7 +31,7 @@ if not os.path.exists(DOCS_DIR):
 
 def load_data():
     try:
-        # שליפה ישירה מ-Supabase לפי מפתח הטיול לגאורגיה
+        # פנייה מפורשת ומדויקת לפי שם הטבלה "app_data"
         response = supabase.table("app_data").select("content").eq("key", "georgia_trip_main_data").execute()
         if response.data and len(response.data) > 0:
             return response.data[0]["content"]
@@ -41,6 +41,7 @@ def load_data():
 
 def save_data(data):
     try:
+        # פנייה מפורשת ומדויקת לפי שם הטבלה "app_data"
         supabase.table("app_data").upsert(
             {"key": "georgia_trip_main_data", "content": data},
             on_conflict="key"
