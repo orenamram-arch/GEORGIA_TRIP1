@@ -8,36 +8,43 @@ import urllib.parse
 import requests
 import json
 import os
+from supabase import create_client, Client
 
 # הגדרת תצורת העמוד (חייב להיות ראשון)
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
 
 # ==========================================
-# ניהול קובץ שמירה מקומי (JSON) ותיקיית מסמכים
+# חיבור ל-Supabase בענן
 # ==========================================
-DATA_FILE = "georgia_trip_data.json"
-DOCS_DIR = "uploaded_docs"
+SUPABASE_URL = "https://vobzhjutimeowgsjhgyt.supabase.co"
+SUPABASE_KEY = "sb_publishable_OC3UKQ-UdO3ba4yHgvt9RQ_-AZdenBv"
 
+@st.cache_resource
+def init_supabase() -> Client:
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = init_supabase()
+
+DOCS_DIR = "uploaded_docs"
 if not os.path.exists(DOCS_DIR):
     os.makedirs(DOCS_DIR)
 
 def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            pass
+    try:
+        response = supabase.table("app_data").select("content").eq("key", "georgia_trip_main_data").execute()
+        if response.data and len(response.data) > 0:
+            return response.data[0]["content"]
+    except Exception as e:
+        st.warning(f"שגיאה בטעינת הנתונים מ-Supabase: {e}")
     return None
 
 def save_data(data):
     try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-    except:
-        pass
+        supabase.table("app_data").upsert({"key": "georgia_trip_main_data", "content": data}).execute()
+    except Exception as e:
+        st.error(f"שגיאה בשמירת הנתונים ב-Supabase: {e}")
 
-# טעינת נתונים קיימים מקובץ השמירה
+# טעינת נתונים קיימים מ-Supabase
 saved_data = load_data()
 
 # הגדרת תאריך תחילת הטיול (עם שמירה)
@@ -115,7 +122,7 @@ if 'total_budget_gel' not in st.session_state:
         st.session_state.total_budget_gel = 4000.0
 
 def persist_all():
-    """שומר את כל הנתונים הדינאמיים לקובץ המקומי לצמיתות"""
+    """שומר את כל הנתונים הדינאמיים ל-Supabase לצמיתות"""
     data = {
         "start_date": st.session_state.start_date.isoformat(),
         "expenses": st.session_state.expenses,
@@ -929,7 +936,7 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
                     st.rerun()
 
 # ==========================================
-# תצוגה 9: אנשי קשר וחירום (כולל הוספה ומחיקה)
+# תצוגה 9: אנשי קשר וחירום
 # ==========================================
 elif selected_tab == "📞 אנשי קשר וחירום":
     st.subheader("📞 ספריית אנשי קשר, מלונות וגורמי חירום")
