@@ -19,15 +19,15 @@ st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה
 SUPABASE_URL = "https://vobzhjutimeowgsjhgyt.supabase.co"
 SUPABASE_KEY = "sb_publishable_OC3UKQ-UdO3ba4yHgvt9RQ_-AZdenBv"
 
+# שם ה-Bucket באחסון Supabase Storage לשמירת קבצים (שוברים, PDF, תמונות)
+# חשוב: יש ליצור Bucket בשם הזה בפאנל של Supabase -> Storage, ולסמן אותו כ-Public
+STORAGE_BUCKET = "trip-docs"
+
 @st.cache_resource
 def init_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 supabase = init_supabase()
-
-DOCS_DIR = "uploaded_docs"
-if not os.path.exists(DOCS_DIR):
-    os.makedirs(DOCS_DIR)
 
 def load_data():
     try:
@@ -49,6 +49,31 @@ def save_data(data):
         st.toast("💾 נשמר בהצלחה בענן Supabase!", icon="✅")
     except Exception as e:
         st.error(f"שגיאה בשמירת הנתונים ב-Supabase: {e}")
+
+# ==========================================
+# פונקציות אחסון קבצים (Supabase Storage)
+# ==========================================
+def upload_file_to_storage(file_bytes, filename):
+    """מעלה קובץ ל-Supabase Storage (קבוע ולא תלוי בדיסק המקומי של השרת)."""
+    try:
+        safe_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+        supabase.storage.from_(STORAGE_BUCKET).upload(
+            safe_name,
+            file_bytes,
+            {"upsert": "true"}
+        )
+        public_url = supabase.storage.from_(STORAGE_BUCKET).get_public_url(safe_name)
+        return safe_name, public_url
+    except Exception as e:
+        st.error(f"שגיאה בהעלאת הקובץ לאחסון הענן: {e}")
+        return None, None
+
+def delete_file_from_storage(storage_path):
+    """מוחק קובץ מ-Supabase Storage."""
+    try:
+        supabase.storage.from_(STORAGE_BUCKET).remove([storage_path])
+    except Exception as e:
+        st.error(f"שגיאה במחיקת הקובץ מהאחסון: {e}")
 
 # טעינת נתונים קיימים מ-Supabase
 saved_data = load_data()
@@ -161,6 +186,7 @@ def calculate_travel_estimation(lat1, lon1, lat2, lon2):
     
     return road_distance, estimated_hours
 
+@st.cache_data(ttl=600)  # מרענן כל 10 דקות בלבד - מונע קריאות רשת מיותרות בכל אינטראקציה
 def get_weather(lat, lon):
     try:
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
@@ -173,6 +199,56 @@ def get_weather(lat, lon):
     except:
         pass
     return "לא ניתן לטעון תחזית כרגע"
+
+@st.cache_data(ttl=3600)  # שער חליפין חי, מתעדכן פעם בשעה
+def get_live_gel_ils_rate():
+    try:
+        response = requests.get("https://open.er-api.com/v6/latest/GEL", timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("result") == "success":
+                return round(data["rates"]["ILS"], 4)
+    except:
+        pass
+    return None
+
+def build_offline_export():
+    """בונה קובץ טקסט מלא (מסלול, מלונות, חניות, מסעדות, אנשי קשר) לשימוש אופליין באזורים ללא קליטה."""
+    lines = []
+    lines.append("=" * 60)
+    lines.append("מסלול טיול משפחתי לגאורגיה - קובץ אופליין מלא")
+    lines.append(f"תאריך התחלה: {st.session_state.start_date.strftime('%d/%m/%Y')}")
+    lines.append("=" * 60)
+    lines.append("")
+
+    lines.append("### אנשי קשר וחירום ###")
+    for c in st.session_state.contacts_list:
+        lines.append(f"- {c['name']} | {c['phone']} | {c.get('role', '')}")
+    lines.append("")
+
+    lines.append("### בתי מלון ###")
+    for h in df_hotels.itertuples():
+        lines.append(f"- {h.hotel} ({h.area}): {h.check_in} עד {h.check_out}")
+        lines.append(f"  חניה: {h.parking.split('|')[0].strip()}")
+        lines.append(f"  מסעדות: {h.restaurants}")
+    lines.append("")
+
+    lines.append("### מסלול יומי מפורט ###")
+    for row in df.sort_values("day").itertuples():
+        lines.append(f"\nיום {row.day} ({row.actual_date.strftime('%d/%m/%Y')}) - {row.region}")
+        lines.append(f"  {row.icon} {row.site}")
+        lines.append(f"  שעות: {row.hours} | משך: {row.activity_hours} ש' | נסיעה: {row.travel_time} ש'")
+        lines.append(f"  פרטים: {row.details}")
+        lines.append(f"  חניה: {row.parking}")
+        lines.append(f"  מסעדות: {', '.join(row.restaurants)}")
+    lines.append("")
+
+    lines.append("### רשימת ציוד ###")
+    for item in st.session_state.packing_list:
+        mark = "[V]" if item["checked"] else "[ ]"
+        lines.append(f"{mark} {item['item']}")
+
+    return "\n".join(lines)
 
 # ==========================================
 # עיצוב מותאם אישית (CSS) - פתרון גלילה לנייד ו-RTL
@@ -318,7 +394,7 @@ itinerary = [
         "adult_cost": 25, "child_cost": 10, "activity_hours": 1.5, "travel_time": 0.5, "icon": "🍇", "lat": 41.9366, "lon": 45.8361, "details": "מנהרות אבן לאחסון יין וטעימות.",
         "parking": "חניון ענק ומסודר של היקב.",
         "parking_app": "חניה חינם", "parking_link": "",
-        "restaurants": ["Tunnel Restaurant (בתוך המנהרות של היקב)", "Kindzmarauli Marani (בעיר קוור렐ิ)"]
+        "restaurants": ["Tunnel Restaurant (בתוך המנהרות של היקב)", "Kindzmarauli Marani (בעיר קוורלי - Kvareli)"]
     },
     {
         "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מצודת אננורי ומאגר ז'ינוואלי", "hours": "09:00 - 19:00", 
@@ -415,8 +491,17 @@ with st.sidebar:
         
     st.markdown("---")
     st.header("💱 המרת מטבע מהירה")
+
+    live_rate = get_live_gel_ils_rate()
+    if live_rate:
+        st.caption(f"✅ שער חי מהרשת: 1 GEL = {live_rate} ₪ (מתעדכן כל שעה)")
+        default_rate = live_rate
+    else:
+        st.caption("⚠️ לא ניתן לטעון שער חי כרגע - נעשה שימוש בערך ידני.")
+        default_rate = 1.38
+
     gel_input = st.number_input("סכום בלארי (GEL):", min_value=0.0, value=100.0, step=10.0)
-    exchange_rate = st.number_input("שער לארי לשקל:", value=1.38, step=0.01)
+    exchange_rate = st.number_input("שער לארי לשקל:", value=float(default_rate), step=0.01)
     ils_calc = gel_input * exchange_rate
     st.info(f"💡 שווה ערך: **{ils_calc:,.1f} ₪** | טיפ מומלץ (10%): **{gel_input*0.1:.1f} לארי**")
 
@@ -561,8 +646,19 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             
     st.markdown("---")
     
-    csv = filtered_df.drop(columns=['restaurants', 'parking', 'parking_app', 'parking_link']).to_csv(index=False).encode('utf-8-sig')
-    st.download_button(label="📥 הורד מסלול לאקסל", data=csv, file_name='georgia_trip.csv', mime='text/csv')
+    col_exp1, col_exp2 = st.columns(2)
+    with col_exp1:
+        csv = filtered_df.drop(columns=['restaurants', 'parking', 'parking_app', 'parking_link']).to_csv(index=False).encode('utf-8-sig')
+        st.download_button(label="📥 הורד מסלול לאקסל", data=csv, file_name='georgia_trip.csv', mime='text/csv')
+    with col_exp2:
+        offline_text = build_offline_export()
+        st.download_button(
+            label="📴 הורד מסלול מלא לשימוש אופליין (בלי אינטרנט)",
+            data=offline_text.encode('utf-8'),
+            file_name='georgia_trip_offline.txt',
+            mime='text/plain',
+            help="קובץ טקסט מלא עם כל המסלול, החניות, המסעדות ואנשי הקשר - שימושי בהרים ללא קליטה."
+        )
     st.markdown("---")
     
     for idx, row in filtered_df.iterrows():
@@ -800,6 +896,13 @@ elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים
 # ==========================================
 elif selected_tab == "🎒 רשימת ציוד (Packing List)":
     st.subheader("🎒 רשימת ציוד ומזוודות למשפחה")
+
+    total_items = len(st.session_state.packing_list)
+    checked_items = sum(1 for i in st.session_state.packing_list if i["checked"])
+    pack_progress = (checked_items / total_items) if total_items > 0 else 0
+    st.markdown(f"### 📦 התקדמות אריזה: {checked_items} מתוך {total_items} פריטים")
+    st.progress(pack_progress)
+
     st.markdown("סמן את הפריטים שכבר ארזתם – השינויים נשמרים באופן אוטומטי לצמיתות:")
     st.markdown("---")
     
@@ -833,6 +936,13 @@ elif selected_tab == "🎒 רשימת ציוד (Packing List)":
 # ==========================================
 elif selected_tab == "📋 משימות טרום-טיול":
     st.subheader("📋 משימות ומנהלות לפני היציאה לטיול")
+
+    total_tasks = len(st.session_state.tasks_list)
+    checked_tasks = sum(1 for t in st.session_state.tasks_list if t["checked"])
+    task_progress = (checked_tasks / total_tasks) if total_tasks > 0 else 0
+    st.markdown(f"### ✅ התקדמות משימות: {checked_tasks} מתוך {total_tasks} הושלמו")
+    st.progress(task_progress)
+
     st.markdown("סמן את המשימות שכבר סגרתם לקראת הנסיעה:")
     st.markdown("---")
     
@@ -881,6 +991,7 @@ elif selected_tab == "📓 יומן מסע אישי":
 elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     st.subheader("📄 מרכז מסמכים, שוברים והעלאת קבצים")
     st.markdown("כאן תוכלו להעלות ולרכז את כל האישורים, כרטיסי הטיסה, פוליסות הביטוח ושוברי המלונות שלכם.")
+    st.caption("הקבצים נשמרים ב-Supabase Storage בענן, כך שהם לא יימחקו כשהשרת מתאתחל.")
     st.markdown("---")
     
     st.markdown("### 📤 העלאת קובץ חדש (PDF, תמונות, מסמכים)")
@@ -889,24 +1000,20 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
     
     if uploaded_file is not None:
         if st.button("שמור קובץ במערכת", type="primary"):
-            file_path = os.path.join(DOCS_DIR, uploaded_file.name)
-            with open(file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
+            with st.spinner("מעלה לענן..."):
+                storage_path, public_url = upload_file_to_storage(uploaded_file.getvalue(), uploaded_file.name)
             
-            exists_idx = next((i for i, item in enumerate(st.session_state.uploaded_files_meta) if item["filename"] == uploaded_file.name), None)
-            file_info = {
-                "filename": uploaded_file.name,
-                "category": file_category,
-                "path": file_path
-            }
-            if exists_idx is not None:
-                st.session_state.uploaded_files_meta[exists_idx] = file_info
-            else:
+            if storage_path and public_url:
+                file_info = {
+                    "filename": uploaded_file.name,
+                    "category": file_category,
+                    "storage_path": storage_path,
+                    "url": public_url
+                }
                 st.session_state.uploaded_files_meta.append(file_info)
-                
-            persist_all()
-            st.success(f"הקובץ '{uploaded_file.name}' הועלה ונשמר בהצלחה!")
-            st.rerun()
+                persist_all()
+                st.success(f"הקובץ '{uploaded_file.name}' הועלה ונשמר בהצלחה בענן!")
+                st.rerun()
 
     st.markdown("---")
     st.subheader("📁 המסמכים והשוברים השמורים שלך:")
@@ -919,23 +1026,16 @@ elif selected_tab == "📄 שוברים ומסמכים דיגיטליים":
             with col_d1:
                 st.markdown(f"<b>📄 {f_meta['filename']}</b> <span style='color: gray; font-size: 0.85em;'>({f_meta['category']})</span>", unsafe_allow_html=True)
             with col_d2:
-                if os.path.exists(f_meta['path']):
-                    with open(f_meta['path'], "rb") as file_to_down:
-                        st.download_button(
-                            label="📥 הורד / הצג",
-                            data=file_to_down,
-                            file_name=f_meta['filename'],
-                            key=f"down_file_{idx}"
-                        )
+                file_url = f_meta.get("url")
+                if file_url:
+                    st.markdown(f"<a href='{file_url}' target='_blank'>📥 הורד / הצג</a>", unsafe_allow_html=True)
                 else:
-                    st.warning("הקובץ חסר בשרת")
+                    st.warning("קישור לקובץ חסר")
             with col_d3:
                 if st.button("🗑️ מחק", key=f"del_file_{idx}"):
-                    if os.path.exists(f_meta['path']):
-                        try:
-                            os.remove(f_meta['path'])
-                        except:
-                            pass
+                    storage_path = f_meta.get("storage_path")
+                    if storage_path:
+                        delete_file_from_storage(storage_path)
                     st.session_state.uploaded_files_meta.pop(idx)
                     persist_all()
                     st.success("הקובץ נמחק!")
