@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from datetime import timedelta, date, datetime
 import math
 import urllib.parse
+import re
 import requests
 import json
 import os
@@ -212,6 +213,26 @@ def get_night_hotel_for_day(day_n):
             return h
     return None
 
+def check_opening_hours(hours_str, arrival_dt, departure_dt):
+    """
+    בודק אם שעת ההגעה/היציאה המחושבת מתנגשת עם שעות הפתיחה של האתר,
+    כשאלו כתובות בפורמט מוכר כמו "10:00 - 17:00". אתרים עם שעות לא-סטנדרטיות
+    (24/7, "שעות יום", זמני מופע וכו') לא נבדקים - מוחזר None.
+    """
+    match = re.search(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})', hours_str)
+    if not match:
+        return None
+    oh, om, ch, cm = map(int, match.groups())
+    open_dt = arrival_dt.replace(hour=oh, minute=om, second=0, microsecond=0)
+    close_dt = arrival_dt.replace(hour=ch, minute=cm, second=0, microsecond=0)
+    if arrival_dt < open_dt:
+        return f"⚠️ מגיעים לפני שעת הפתיחה ({open_dt.strftime('%H:%M')}) - שקלו לצאת מאוחר יותר מהמלון"
+    if arrival_dt > close_dt:
+        return f"⚠️ מגיעים אחרי שעת הסגירה ({close_dt.strftime('%H:%M')}) - האתר עלול להיות סגור"
+    if departure_dt > close_dt:
+        return f"⚠️ לפי משך השהות המתוכנן תעזבו ב-{departure_dt.strftime('%H:%M')}, אחרי הסגירה ({close_dt.strftime('%H:%M')}) - קצרו את הביקור או צאו מהמלון מוקדם יותר"
+    return None
+
 def build_day_schedule(day_n, day_sites):
     """
     בונה לוח זמנים מפורט ליום נתון: שעת יציאה מהמלון -> נסיעה -> הגעה לאתר -> שהות -> נסיעה לאתר הבא וכו',
@@ -240,12 +261,14 @@ def build_day_schedule(day_n, day_sites):
             travel_h = 0.0
         arrival = current_time + timedelta(hours=travel_h)
         departure = arrival + timedelta(hours=float(site["activity_hours"]))
+        hours_warning = check_opening_hours(site.get("hours", ""), arrival, departure)
         schedule.append({
             "site": site["site"],
             "icon": site["icon"],
             "travel_minutes": round(travel_h * 60),
             "arrival": arrival,
             "departure": departure,
+            "hours_warning": hours_warning,
         })
         current_time = departure
         current_lat, current_lon = site["lat"], site["lon"]
@@ -919,10 +942,12 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             for s in day_schedule:
                 travel_note = f"🚗 {s['travel_minutes']} דק' נסיעה &nbsp;→&nbsp; " if s['travel_minutes'] > 0 else ""
                 timeline_rows += f"<div style='padding:4px 0;'>{travel_note}<b>{s['icon']} {s['site']}</b>: הגעה <b>{s['arrival'].strftime('%H:%M')}</b> — יציאה <b>{s['departure'].strftime('%H:%M')}</b></div>"
+                if s.get('hours_warning'):
+                    timeline_rows += f"<div style='padding:0 0 4px 0; color:#c0392b; font-size:0.9em;'>{s['hours_warning']}</div>"
             if final_arrival and night_hotel:
                 timeline_rows += f"<div style='padding:6px 0 0 0; color:#667eea; font-weight:bold;'>🏨 הגעה משוערת ל-{night_hotel['hotel']}: {final_arrival.strftime('%H:%M')}</div>"
             st.markdown(f"<div class='info-box' style='margin-bottom:16px;'>{timeline_rows}</div>", unsafe_allow_html=True)
-            st.caption("⏱️ זמני הנסיעה מבוססים על הערכת קו-אווירי + 40% (בקירוב לכביש הררי) במהירות ממוצעת 55 קמ\"ש - התאימו לפי תנאי השטח בפועל.")
+            st.caption("⏱️ זמני הנסיעה מבוססים על הערכת קו-אווירי + 40% (בקירוב לכביש הררי) במהירות ממוצעת 55 קמ\"ש - התאימו לפי תנאי השטח בפועל. בדיקת שעות הפתיחה עובדת רק לאתרים עם טווח שעות מוגדר (למשל \"10:00 - 17:00\"); אתרים עם \"24/7\", \"שעות יום\" או זמני מופע ספציפיים לא נבדקים אוטומטית.")
 
         date_str = row['actual_date'].strftime("%d/%m/%Y")
         item_cost_ils = row['total_cost_gel'] * exchange_rate
