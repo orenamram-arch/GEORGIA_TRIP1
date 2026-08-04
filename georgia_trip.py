@@ -54,9 +54,12 @@ def save_data(data):
 # פונקציות אחסון קבצים (Supabase Storage)
 # ==========================================
 def upload_file_to_storage(file_bytes, filename):
-    """מעלה קובץ ל-Supabase Storage (קבוע ולא תלוי בדיסק המקומי של השרת)."""
+    """מעלה קובץ ל-Supabase Storage עם שם קובץ מאובטח ללא עברית או רווחים."""
     try:
-        safe_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+        # יוצרים סיומת קובץ בטוחה ושם אנגלי נקי לחלוטין למניעת שגיאות InvalidKey
+        ext = filename.split(".")[-1] if "." in filename else "bin"
+        safe_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_file.{ext}"
+        
         supabase.storage.from_(STORAGE_BUCKET).upload(
             safe_name,
             file_bytes,
