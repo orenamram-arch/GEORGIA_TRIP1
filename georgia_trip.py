@@ -215,6 +215,28 @@ def get_live_gel_ils_rate():
         pass
     return None
 
+@st.cache_data(ttl=86400)  # תמונה מוויקיפדיה - נשמרת ביום כדי לא להעמיס בקשות מיותרות
+def get_wikipedia_image(page_title, lang="en"):
+    """
+    שולף את תמונת ה-Infobox הרשמית של ערך בוויקיפדיה (מקור: Wikimedia Commons, רישיון פתוח).
+    מחזיר None בשקט אם הערך לא קיים או שאין לו תמונה - כדי שהכרטיס פשוט לא יציג תמונה,
+    ולא ישבור את הדף.
+    """
+    try:
+        encoded_title = urllib.parse.quote(page_title.replace(" ", "_"))
+        url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{encoded_title}"
+        response = requests.get(url, timeout=4, headers={"User-Agent": "GeorgiaTripApp/1.0 (family trip planner)"})
+        if response.status_code == 200:
+            data = response.json()
+            thumb = data.get("thumbnail", {}).get("source") or data.get("originalimage", {}).get("source")
+            if thumb:
+                # מבקשים רזולוציה גבוהה יותר מהתמונה הממוזערת אם אפשר
+                thumb = thumb.replace("/220px-", "/600px-").replace("/250px-", "/600px-")
+                return thumb
+    except:
+        pass
+    return None
+
 def build_offline_export():
     """בונה קובץ טקסט מלא (מסלול, מלונות, חניות, מסעדות, אנשי קשר) לשימוש אופליין באזורים ללא קליטה."""
     lines = []
@@ -380,7 +402,7 @@ st.markdown("---")
 # ==========================================
 itinerary = [
     {
-        "day": 1, "region": "באטומי (חוף וטיילת)", "site": "שדרות באטומי (Batumi Boulevard)", "hours": "פתוח 24/7", 
+        "day": 1, "region": "באטומי (חוף וטיילת)", "site": "שדרות באטומי (Batumi Boulevard)", "hours": "פתוח 24/7", "wiki_title": "Batumi",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.5, "travel_time": 0.0, "icon": "🌴", "lat": 41.6530, "lon": 41.6360, 
         "details": "טיול רגלי או רכיבה לאורך הטיילת המרשימה (7 ק\"מ).",
         "parking": "חניה עירונית מוסדרת בבאטומי.",
@@ -388,7 +410,7 @@ itinerary = [
         "restaurants": ["Retro (מפורסם בזכות האצ'פורי אג'רולי)", "Fanfan (אוכל אירופאי וגאורגי מעוצב)"]
     },
     {
-        "day": 1, "region": "באטומי (חוף וטיילת)", "site": "פסל עלי ונינו (Ali and Nino)", "hours": "פתוח 24/7", 
+        "day": 1, "region": "באטומי (חוף וטיילת)", "site": "פסל עלי ונינו (Ali and Nino)", "hours": "פתוח 24/7", "wiki_title": "Ali and Nino (sculpture)",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 0.5, "travel_time": 0.3, "icon": "🗿", "lat": 41.6556, "lon": 41.6394, 
         "details": "צפייה בפסל הדינמי המפורסם על קו המים.",
         "parking": "חניה ציבורית סמוך לנמל.",
@@ -396,7 +418,7 @@ itinerary = [
         "restaurants": ["Chef's Grill", "Batumeti"]
     },
     {
-        "day": 2, "region": "באטומי (אטרקציות)", "site": "הדולפינריום של באטומי", "hours": "16:00 / 19:00", 
+        "day": 2, "region": "באטומי (אטרקציות)", "site": "הדולפינריום של באטומי", "hours": "16:00 / 19:00", "wiki_title": "Batumi",
         "adult_cost": 25, "child_cost": 25, "activity_hours": 2.0, "travel_time": 0.4, "icon": "🐬", "lat": 41.6475, "lon": 41.6231, 
         "details": "מופע דולפינים מרהיב וחווייתי.",
         "parking": "חניון סביב פארק 6 במאי.",
@@ -404,126 +426,126 @@ itinerary = [
         "restaurants": ["Restaurant 360 (במלון שירטון הסמוך)", "Laguna (מאפיית פחמימות מיתולוגית)"]
     },
     {
-        "day": 2, "region": "באטומי (אטרקציות)", "site": "רכבל ארגו (Argo Cable Car)", "hours": "10:00 - 22:00", 
+        "day": 2, "region": "באטומי (אטרקציות)", "site": "רכבל ארגו (Argo Cable Car)", "hours": "10:00 - 22:00", "wiki_title": "Batumi Cable Car",
         "adult_cost": 30, "child_cost": 15, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🚡", "lat": 41.6472, "lon": 41.6455, "details": "עלייה לתצפית פנורמית מרהיבה.",
         "parking": "חניון רשמי של הרכבל.",
         "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Argo Cafe (בראש ההר)", "Old Boulevard"]
     },
     {
-        "day": 2, "region": "באטומי (אטרקציות)", "site": "הגנים הבוטניים של באטומי", "hours": "09:00 - 19:30", 
+        "day": 2, "region": "באטומי (אטרקציות)", "site": "הגנים הבוטניים של באטומי", "hours": "09:00 - 19:30", "wiki_title": "Batumi Botanical Garden",
         "adult_cost": 30, "child_cost": 30, "activity_hours": 3.0, "travel_time": 0.4, "icon": "🌳", "lat": 41.6963, "lon": 41.7163, "details": "סיור בטבע ירוק ועשיר הנושק לים.",
         "parking": "חניון בכניסה הראשית לגנים.",
         "parking_app": "תשלום במקום", "parking_link": "",
         "restaurants": ["Green Cape Cafe", "מסעדות דגים מקומיות בחוף מחירינגי"]
     },
     {
-        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "מערת פרומתאוס (Prometheus Cave)", "hours": "10:00 - 17:00", 
+        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "מערת פרומתאוס (Prometheus Cave)", "hours": "10:00 - 17:00", "wiki_title": "Prometheus Cave",
         "adult_cost": 40, "child_cost": 40, "activity_hours": 2.5, "travel_time": 2.0, "icon": "🦇", "lat": 42.3768, "lon": 42.6009, "details": "מערת נטיפים תת-קרקעית מרהיבה.",
         "parking": "חניון מסודר וחינמי של מתחם המערה.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Prometheus Cafe", "מסעדות כפריות באזור צקלטובו (Tskaltubo)"]
     },
     {
-        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "קניון מרטווילי (Martvili Canyon)", "hours": "10:00 - 17:30", 
+        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "קניון מרטווילי (Martvili Canyon)", "hours": "10:00 - 17:30", "wiki_title": "Martvili Canyon",
         "adult_cost": 32.25, "child_cost": 32.25, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🛶", "lat": 42.4578, "lon": 42.3767, "details": "שייט בסירות מתנפחות בתוך קניון מים.",
         "parking": "חניון מוסדר של האתר (חינם).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Dadiani Cafe (בתוך הקניון)", "Oda Family Winery (אוכל ביתי מנגרלואי אותנטי בהזמנה מראש)"]
     },
     {
-        "day": 4, "region": "טביליסי", "site": "פארק מתאצמינדה (Mtatsminda Park)", "hours": "11:00 - 22:00", 
+        "day": 4, "region": "טביליסי", "site": "פארק מתאצמינדה (Mtatsminda Park)", "hours": "11:00 - 22:00", "wiki_title": "Mtatsminda Park",
         "adult_cost": 10, "child_cost": 10, "activity_hours": 3.5, "travel_time": 0.5, "icon": "🎢", "lat": 41.6946, "lon": 44.7865, "details": "פארק שעשועים בראש ההר המשקיף על טביליסי.",
         "parking": "חניון עליון בפארק.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Funicular Restaurant (מסעדה יוקרתית עם נוף מטורף)", "Doner House"]
     },
     {
-        "day": 4, "region": "טביליסי", "site": "רכבל ומצודת נריקלה (Narikala)", "hours": "10:00 - 22:00", 
+        "day": 4, "region": "טביליסי", "site": "רכבל ומצודת נריקלה (Narikala)", "hours": "10:00 - 22:00", "wiki_title": "Narikala",
         "adult_cost": 5, "child_cost": 5, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🏰", "lat": 41.6881, "lon": 44.8093, "details": "רכבל, מצודה ופסל אמא גאורגיה.",
         "parking": "חניה עירונית באזור Rike Park.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Machakhela (כיכר הבמבה)", "Samikitno (פתוח 24/7, אוכל גאורגי מעולה)"]
     },
     {
-        "day": 5, "region": "דשבשי + קחתי", "site": "גשר היהלום בדשבשי", "hours": "10:00 - 19:00", 
+        "day": 5, "region": "דשבשי + קחתי", "site": "גשר היהלום בדשבשי", "hours": "10:00 - 19:00", "wiki_title": "Dashbashi Canyon",
         "adult_cost": 49, "child_cost": 49, "activity_hours": 2.5, "travel_time": 2.0, "icon": "💎", "lat": 41.5975, "lon": 44.0253, "details": "גשר זכוכית שקוף מעל קניון עמוק.",
         "parking": "חניון עפר מסודר בכניסה למתחם.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Diamond Bridge Panorama Restaurant (מסעדה תלויה עם נוף לקניון)"]
     },
     {
-        "day": 5, "region": "דשבשי + קחתי", "site": "מנזר בודבה ועיירת האהבה סיגנאגי", "hours": "שעות יום", 
+        "day": 5, "region": "דשבשי + קחתי", "site": "מנזר בודבה ועיירת האהבה סיגנאגי", "hours": "שעות יום", "wiki_title": "Bodbe Monastery",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.0, "travel_time": 1.5, "icon": "⛪", "lat": 41.6116, "lon": 45.9333, "details": "חומות ציוריות, סמטאות אבן ונוף.",
         "parking": "חניה מוסדרת בכניסה למנזר וברחובות סיגנאגי.",
         "parking_app": "חניה מקומית", "parking_link": "",
         "restaurants": ["Pheasant's Tears (יקב ומסעדה אורגנית מומלצת בסיגנאגי)", "Okro's Wine"]
     },
     {
-        "day": 5, "region": "דשבשי + קחתי", "site": "יקב חארבה (Khareba)", "hours": "10:00 - 18:00", 
+        "day": 5, "region": "דשבשי + קחתי", "site": "יקב חארבה (Khareba)", "hours": "10:00 - 18:00", "wiki_title": "Kakheti",
         "adult_cost": 25, "child_cost": 10, "activity_hours": 1.5, "travel_time": 0.5, "icon": "🍇", "lat": 41.9366, "lon": 45.8361, "details": "מנהרות אבן לאחסון יין וטעימות.",
         "parking": "חניון ענק ומסודר של היקב.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Tunnel Restaurant (בתוך המנהרות של היקב)", "Kindzmarauli Marani (בעיר קוורלי - Kvareli)"]
     },
     {
-        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מצודת אננורי ומאגר ז'ינוואלי", "hours": "09:00 - 19:00", 
+        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מצודת אננורי ומאגר ז'ינוואלי", "hours": "09:00 - 19:00", "wiki_title": "Ananuri",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 1.0, "travel_time": 1.5, "icon": "🌊", "lat": 42.1643, "lon": 44.7032, "details": "אגם טורקיז ומצודה היסטורית שמורה.",
         "parking": "חניה לצד הדרך / חניון עפר ליד המצודה.",
         "parking_app": "תשלום במקום", "parking_link": "",
         "restaurants": ["Pasanauri Khinkali House (בדרך, מומלץ לעצור לחינקלי)", "Ananuri Cafe"]
     },
     {
-        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "אנדרטת גודאורי + רכבת הרים", "hours": "שעות היום", 
+        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "אנדרטת גודאורי + רכבת הרים", "hours": "שעות היום", "wiki_title": "Gudauri",
         "adult_cost": 20, "child_cost": 20, "activity_hours": 2.0, "travel_time": 1.0, "icon": "🛷", "lat": 42.4925, "lon": 44.4533, "details": "תצפית נוף וגלישה בקרוניות הרים.",
         "parking": "חניון רחב ידיים לצד האנדרטה.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Gudauri Lodge Restaurant", "Cafe Quadra"]
     },
     {
-        "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "כנסיית גרגטי", "hours": "אור יום", 
+        "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "כנסיית גרגטי", "hours": "אור יום", "wiki_title": "Gergeti Trinity Church",
         "adult_cost": 60, "child_cost": 60, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🏔️", "lat": 42.6629, "lon": 44.6203, "details": "כנסייה מפורסמת למרגלות הר קזבק.",
         "parking": "חניה למעלה ליד הכנסייה (עפר).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Mountain Freaks Cafe (בסטפנצמינדה)", "Cafe 5047m"]
     },
     {
-        "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "מלון Rooms Kazbegi", "hours": "12:00 - 22:00", 
+        "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "מלון Rooms Kazbegi", "hours": "12:00 - 22:00", "wiki_title": "Stepantsminda",
         "adult_cost": 40, "child_cost": 30, "activity_hours": 1.5, "travel_time": 0.3, "icon": "☕", "lat": 42.6566, "lon": 44.6464, "details": "ארוחה או קפה במרפסת המפורסמת עם נוף להר.",
         "parking": "חניה מסודרת לאורחי המלון והמסעדה.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Rooms Hotel Restaurant (אוכל אירופאי-גאורגי עילי)", "Sno Cafe"]
     },
     {
-        "day": 8, "region": "טביליסי העתיקה", "site": "מרחצאות חמי אורבליאני", "hours": "08:00 - 23:00", 
+        "day": 8, "region": "טביליסי העתיקה", "site": "מרחצאות חמי אורבליאני", "hours": "08:00 - 23:00", "wiki_title": "Abanotubani",
         "adult_cost": 75, "child_cost": 0, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🛁", "lat": 41.6880, "lon": 44.8115, "details": "חדר פרטי במרחצאות הגופרית.",
         "parking": "חניון רחוב בתשלום עירוני.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Culinarium Khasheria (שף לוקה טרזני - מעולה)", "Gastro Chef"]
     },
     {
-        "day": 8, "region": "טביליסי העתיקה", "site": "מפל לגווטכבי וגשר השלום", "hours": "24/7", 
+        "day": 8, "region": "טביליסי העתיקה", "site": "מפל לגווטכבי וגשר השלום", "hours": "24/7", "wiki_title": "Bridge of Peace (Tbilisi)",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.0, "travel_time": 0.3, "icon": "🌉", "lat": 41.6865, "lon": 44.8090, "details": "מפל טבעי המסתתר בלב העיר.",
         "parking": "חניון Rike Park הסמוך.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Pur Pur (מסעדה וינטג' קסומה במרכז)", "Shavi Lomi (מסעדת גורמה מקומית מדהימה - דורשת הזמנה מראש)"]
     },
     {
-        "day": 9, "region": "שקווטילי", "site": "הפארק הדנדרולוגי", "hours": "10:00 - 18:00", 
+        "day": 9, "region": "שקווטילי", "site": "הפארק הדנדרולוגי", "hours": "10:00 - 18:00", "wiki_title": "Shekvetili",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🦩", "lat": 41.9372, "lon": 41.7644, "details": "פארק עצום עם ציפורים ופלמינגו.",
         "parking": "חניון מסודר וחינמי בכניסה לפארק.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Black Sea Arena Cafe", "מסעדות חוף באזור שקווטילי ואורקיבי"]
     },
     {
-        "day": 9, "region": "שקווטילי", "site": "פארק המוזיקאים", "hours": "24/7", 
+        "day": 9, "region": "שקווטילי", "site": "פארק המוזיקאים", "hours": "24/7", "wiki_title": "Shekvetili",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 1.5, "travel_time": 0.3, "icon": "🎵", "lat": 41.9167, "lon": 41.7681, "details": "יער קסום עם פסלי מוזיקאים.",
         "parking": "חניה לצד הפארק ביער.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Magnetic Beach Cafe", "Paragraph Resort Restaurants"]
     },
     {
-        "day": 10, "region": "באטומי (סיום)", "site": "שוק הדגים של באטומי", "hours": "09:00 - 20:00", 
+        "day": 10, "region": "באטומי (סיום)", "site": "שוק הדגים של באטומי", "hours": "09:00 - 20:00", "wiki_title": "Batumi",
         "adult_cost": 40, "child_cost": 30, "activity_hours": 2.0, "travel_time": 0.0, "icon": "🐟", "lat": 41.6495, "lon": 41.6521, "details": "בוחרים דגים ומבשלים במקום.",
         "parking": "חניון השוק.",
         "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
@@ -742,6 +764,8 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
         )
     st.markdown("---")
 
+    st.caption("📷 תמונות האתרים נשלפות אוטומטית מוויקיפדיה (Wikimedia Commons, רישיון פתוח). לא לכל אתר נמצאה תמונה מתאימה.")
+
     # מקרא צבעים לפי אזור
     legend_html = "<div style='margin-bottom:18px;'>"
     for region, color in REGION_COLOR_MAP.items():
@@ -777,8 +801,13 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
         parking_text = row['parking']
         if row['parking_link']:
             parking_text += f" | <a href='{row['parking_link']}' target='_blank'><b>[פתח את {row['parking_app']}]</b></a>"
-        
+
+        # שליפת תמונה חופשית-רישיון מוויקיפדיה עבור האתר (בזמן אמת, עם קאש ל-24 שעות)
+        wiki_image_url = get_wikipedia_image(row.get('wiki_title', row['site']))
+
         card_content = f"<div class='site-card' style='border-right-color: {region_color};'>"
+        if wiki_image_url:
+            card_content += f"<img src='{wiki_image_url}' style='width:100%; max-height:260px; object-fit:cover; border-radius:10px; margin-bottom:12px;' loading='lazy' alt='{row['site']}'>"
         card_content += f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> {row['site']}</h2>"
         card_content += f"<p><b>📍 אזור:</b> {row['region']}</p>"
         card_content += f"<p><b>📝 פרטים:</b> {row['details']}</p>"
