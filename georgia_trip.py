@@ -254,7 +254,7 @@ def build_offline_export():
     return "\n".join(lines)
 
 # ==========================================
-# עיצוב מותאם אישית (CSS) - פתרון גלילה לנייד ו-RTL
+# עיצוב מותאם אישית (CSS) - פתרון גלילה לנייד, RTL, ותמיכה ב-Dark Mode
 # ==========================================
 st.markdown("""
 <style>
@@ -269,13 +269,80 @@ st.markdown("""
         overflow-y: auto !important;
     }
 
-    div[data-testid="metric-container"] { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-right: 5px solid #28a745; }
-    div[data-testid="metric-container"] label, div[data-testid="metric-container"] div { color: #111111 !important; }
-    .site-card { background-color: #ffffff !important; border: 1px solid #e0e0e0; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); margin-bottom: 20px; border-right: 6px solid #ff4b4b; }
-    .site-card h2, .site-card p, .site-card b { color: #222222 !important; }
+    div[data-testid="metric-container"] {
+        background: var(--secondary-background-color, #f8f9fa) !important;
+        border: 1px solid rgba(128,128,128,0.25);
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        text-align: center;
+        border-right: 5px solid #28a745;
+    }
+    div[data-testid="metric-container"] label, div[data-testid="metric-container"] div {
+        color: var(--text-color, #111111) !important;
+    }
+
+    .site-card {
+        background-color: var(--secondary-background-color, #ffffff) !important;
+        border: 1px solid rgba(128,128,128,0.2);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+        margin-bottom: 16px;
+        border-right: 6px solid #ff4b4b;
+        transition: transform 0.15s ease;
+    }
+    .site-card:hover { transform: translateX(-2px); }
+    .site-card h2, .site-card p, .site-card b {
+        color: var(--text-color, #222222) !important;
+    }
+
     .date-badge { background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; margin-right: 10px; }
-    .info-box { background-color: #f8f9fa; border-right: 4px solid #17a2b8; padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; }
-    .countdown-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .region-badge { color: #ffffff; padding: 3px 10px; border-radius: 15px; font-size: 0.8em; font-weight: bold; margin-right: 8px; }
+    .info-box { background-color: rgba(23,162,184,0.08); border-right: 4px solid #17a2b8; padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; }
+
+    /* ספירה לאחור עם אנימציית פעימה עדינה */
+    @keyframes pulseGlow {
+        0%   { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        50%  { box-shadow: 0 4px 22px rgba(118,75,162,0.45); }
+        100% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    }
+    .countdown-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white; padding: 15px; border-radius: 12px; text-align: center;
+        margin-bottom: 20px; font-weight: bold;
+        animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    /* ציר זמן (Timeline) למסלול היומי */
+    .timeline-day-header {
+        display: flex; align-items: center; gap: 12px;
+        margin: 22px 0 12px 0;
+    }
+    .timeline-day-badge {
+        min-width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-weight: bold; font-size: 1.1em; flex-shrink: 0;
+        box-shadow: 0 0 0 4px rgba(118,75,162,0.15);
+    }
+    .timeline-day-title { font-size: 1.15em; font-weight: bold; }
+    .timeline-day-sub { font-size: 0.85em; color: #888; font-weight: normal; }
+
+    /* כפתורי ניווט גדולים ונוחים יותר בסרגל הצד */
+    div[role="radiogroup"] label {
+        display: block !important;
+        padding: 9px 12px !important;
+        margin-bottom: 5px !important;
+        border-radius: 10px !important;
+        background: rgba(128,128,128,0.08) !important;
+        transition: all 0.15s ease !important;
+        cursor: pointer !important;
+    }
+    div[role="radiogroup"] label:hover {
+        background: rgba(102,126,234,0.18) !important;
+        transform: translateX(-3px);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -465,6 +532,17 @@ itinerary = [
 ]
 
 # ==========================================
+# מיפוי צבעים לכל אזור במסלול (לשימוש בכרטיסים ובמפה)
+# ==========================================
+REGION_PALETTE = ["#ff6b6b", "#4ecdc4", "#ffa62b", "#6c5ce7", "#00b894",
+                   "#0984e3", "#e17055", "#fd79a8", "#00cec9", "#fab1a0"]
+_region_order = []
+for _item in itinerary:
+    if _item["region"] not in _region_order:
+        _region_order.append(_item["region"])
+REGION_COLOR_MAP = {region: REGION_PALETTE[i % len(REGION_PALETTE)] for i, region in enumerate(_region_order)}
+
+# ==========================================
 # סרגל צד (Sidebar)
 # ==========================================
 with st.sidebar:
@@ -631,7 +709,7 @@ if selected_day != "הכל":
     filtered_df = filtered_df[filtered_df['day'] == selected_day]
 
 # ==========================================
-# תצוגה 1: פירוט מסלול ומזג אוויר חי
+# תצוגה 1: פירוט מסלול ומזג אוויר חי (בעיצוב ציר-זמן)
 # ==========================================
 if selected_tab == "📅 פירוט מסלול ואטרקציות":
     st.subheader("📍 אטרקציות המסלול, חניות ואפליקציות תשלום")
@@ -663,10 +741,33 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
             help="קובץ טקסט מלא עם כל המסלול, החניות, המסעדות ואנשי הקשר - שימושי בהרים ללא קליטה."
         )
     st.markdown("---")
-    
+
+    # מקרא צבעים לפי אזור
+    legend_html = "<div style='margin-bottom:18px;'>"
+    for region, color in REGION_COLOR_MAP.items():
+        legend_html += f"<span class='region-badge' style='background-color:{color};'>{region}</span> "
+    legend_html += "</div>"
+    st.markdown(legend_html, unsafe_allow_html=True)
+
+    current_day_marker = None
     for idx, row in filtered_df.iterrows():
+        # כותרת יום חדשה בציר הזמן כאשר עוברים ליום הבא
+        if row['day'] != current_day_marker:
+            current_day_marker = row['day']
+            date_str_marker = row['actual_date'].strftime("%d/%m/%Y")
+            st.markdown(f"""
+            <div class="timeline-day-header">
+                <div class="timeline-day-badge">{row['day']}</div>
+                <div>
+                    <div class="timeline-day-title">יום {row['day']} — {row['region']}</div>
+                    <div class="timeline-day-sub">{date_str_marker}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
         date_str = row['actual_date'].strftime("%d/%m/%Y")
         item_cost_ils = row['total_cost_gel'] * exchange_rate
+        region_color = REGION_COLOR_MAP.get(row['region'], '#ff4b4b')
         
         restaurants_html = ""
         for rest in row['restaurants']:
@@ -677,8 +778,8 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
         if row['parking_link']:
             parking_text += f" | <a href='{row['parking_link']}' target='_blank'><b>[פתח את {row['parking_app']}]</b></a>"
         
-        card_content = "<div class='site-card'>"
-        card_content += f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> יום {row['day']} | {row['site']}</h2>"
+        card_content = f"<div class='site-card' style='border-right-color: {region_color};'>"
+        card_content += f"<h2>{row['icon']} <span class='date-badge'>{date_str}</span> {row['site']}</h2>"
         card_content += f"<p><b>📍 אזור:</b> {row['region']}</p>"
         card_content += f"<p><b>📝 פרטים:</b> {row['details']}</p>"
         card_content += f"<p>🕒 <b>שעות פתיחה:</b> {row['hours']}</p>"
@@ -823,6 +924,42 @@ elif selected_tab == "📊 דשבורד עלויות ופיצול תשלומים
     col1.metric("💰 עלות אטרקציות תאורטית", f"{total_cost_gel:,.0f} GEL", f"~ {total_cost_ils:,.0f} ₪")
     col2.metric("קטגוריית הוצאות שוטפות", f"{actual_spent_gel:,.0f} GEL", f"~ {actual_spent_ils:,.0f} ₪")
     col3.metric("⏱️ סך שעות פעילות", f"{filtered_df['activity_hours'].sum():,.1f} שעות")
+
+    st.markdown("---")
+    st.subheader("📈 ניתוח חזותי של ההוצאות")
+    chart_col1, chart_col2 = st.columns(2)
+
+    with chart_col1:
+        if st.session_state.expenses:
+            cat_summary = {}
+            for e in st.session_state.expenses:
+                cat_summary[e['category']] = cat_summary.get(e['category'], 0) + e['amount']
+            fig_pie = px.pie(
+                names=list(cat_summary.keys()),
+                values=list(cat_summary.values()),
+                title="התפלגות הוצאות בפועל לפי קטגוריה",
+                hole=0.45
+            )
+            fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+            fig_pie.update_layout(margin=dict(t=50, b=0, l=0, r=0), showlegend=False)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("אין עדיין הוצאות בפועל כדי להציג גרף.")
+
+    with chart_col2:
+        daily_cost = df.groupby('day')['total_cost_gel'].sum().reset_index()
+        daily_cost['date_label'] = daily_cost['day'].apply(
+            lambda d: (st.session_state.start_date + timedelta(days=d - 1)).strftime('%d/%m')
+        )
+        fig_bar = px.bar(
+            daily_cost, x='date_label', y='total_cost_gel',
+            title="עלות אטרקציות תאורטית לפי יום (GEL)",
+            labels={'date_label': 'תאריך', 'total_cost_gel': 'עלות (GEL)'},
+            color='total_cost_gel',
+            color_continuous_scale='Purples'
+        )
+        fig_bar.update_layout(margin=dict(t=50, b=0, l=0, r=0), coloraxis_showscale=False)
+        st.plotly_chart(fig_bar, use_container_width=True)
     
     st.markdown("---")
     st.subheader("👥 סיכום פיצול הוצאות לפי משלם")
@@ -1152,10 +1289,11 @@ elif selected_tab == "🚨 חירום וטיפים לשטח":
     """, unsafe_allow_html=True)
 
 # ==========================================
-# תצוגה 12: מפה אינטראקטיבית
+# תצוגה 12: מפה אינטראקטיבית (צבועה לפי יום המסלול)
 # ==========================================
 elif selected_tab == "🗺️ מפת האטרקציות":
     st.subheader("🗺️ מפת האטרקציות האינטראקטיבית")
+    st.caption("צבע כל נקודה משקף את יום המסלול - כך ניתן לראות ויזואלית את רצף הנסיעה הגיאוגרפי.")
     st.markdown("---")
     if not filtered_df.empty:
         fig_map = px.scatter_mapbox(
@@ -1164,12 +1302,16 @@ elif selected_tab == "🗺️ מפת האטרקציות":
             lon="lon",
             hover_name="site",
             hover_data=["day", "region", "icon"],
+            color="day",
+            color_continuous_scale=px.colors.sequential.Viridis,
             zoom=7,
-            height=500
+            height=550
         )
+        fig_map.update_traces(marker=dict(size=14))
         fig_map.update_layout(
             mapbox_style="open-street-map",
-            margin={"r":0,"t":0,"l":0,"b":0}
+            margin={"r":0,"t":0,"l":0,"b":0},
+            coloraxis_colorbar=dict(title="יום")
         )
         st.plotly_chart(fig_map, use_container_width=True)
     else:
