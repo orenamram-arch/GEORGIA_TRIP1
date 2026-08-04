@@ -15,10 +15,41 @@ from supabase import create_client, Client
 st.set_page_config(page_title="תכנון טיול משפחתי לגאורגיה", page_icon="🇬🇪", layout="wide")
 
 # ==========================================
+# שכבת אבטחה (Login Gate)
+# ==========================================
+def check_password():
+    def password_entered():
+        if st.secrets["passwords"].get(st.session_state["username"]) == st.session_state["password"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+            del st.session_state["username"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        st.markdown("### 🔐 כניסה למערכת הטיול המשפחתי")
+        st.text_input("שם משתמש", key="username")
+        st.text_input("סיסמה", type="password", key="password")
+        st.button("התחבר", on_click=password_entered)
+        return False
+    elif not st.session_state["password_correct"]:
+        st.markdown("### 🔐 כניסה למערכת הטיול המשפחתי")
+        st.text_input("שם משתמש", key="username")
+        st.text_input("סיסמה", type="password", key="password")
+        st.button("התחבר", on_click=password_entered)
+        st.error("😕 שם משתמש או סיסמה שגויים")
+        return False
+    else:
+        return True
+
+if not check_password():
+    st.stop()  # עוצר את טעינת האפליקציה עד להזנת פרטים תקינים
+    
+# ==========================================
 # חיבור ל-Supabase בענן
 # ==========================================
-SUPABASE_URL = "https://vobzhjutimeowgsjhgyt.supabase.co"
-SUPABASE_KEY = "sb_publishable_OC3UKQ-UdO3ba4yHgvt9RQ_-AZdenBv"
+SUPABASE_URL = st.secrets["supabase"]["url"]
+SUPABASE_KEY = st.secrets["supabase"]["key"]
 
 # שם ה-Bucket באחסון Supabase Storage לשמירת קבצים (שוברים, PDF, תמונות)
 # חשוב: יש ליצור Bucket בשם הזה בפאנל של Supabase -> Storage, ולסמן אותו כ-Public
