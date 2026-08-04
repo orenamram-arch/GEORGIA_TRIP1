@@ -155,6 +155,12 @@ if 'total_budget_gel' not in st.session_state:
     else:
         st.session_state.total_budget_gel = 4000.0
 
+if 'day_departure_times' not in st.session_state:
+    if saved_data and "day_departure_times" in saved_data:
+        st.session_state.day_departure_times = saved_data["day_departure_times"]
+    else:
+        st.session_state.day_departure_times = {}  # ימולא בברירות מחדל בזמן ריצה
+
 def persist_all():
     """שומר את כל הנתונים הדינאמיים ל-Supabase לצמיתות"""
     data = {
@@ -165,7 +171,8 @@ def persist_all():
         "journal_notes": st.session_state.journal_notes,
         "uploaded_files_meta": st.session_state.uploaded_files_meta,
         "contacts_list": st.session_state.contacts_list,
-        "total_budget_gel": st.session_state.total_budget_gel
+        "total_budget_gel": st.session_state.total_budget_gel,
+        "day_departure_times": st.session_state.day_departure_times
     }
     save_data(data)
 
@@ -188,6 +195,67 @@ def calculate_travel_estimation(lat1, lon1, lat2, lon2):
     estimated_hours = road_distance / 55.0 
     
     return road_distance, estimated_hours
+
+def get_departure_hotel_for_day(day_n):
+    """המלון שבו התעוררו בבוקר היום הזה (=המלון שכיסה את הלילה הקודם). None ביום ההגעה."""
+    if day_n <= 1:
+        return None
+    for h in hotels_raw:
+        if h["check_in_day"] <= (day_n - 1) and h["check_out_day"] >= day_n:
+            return h
+    return None
+
+def get_night_hotel_for_day(day_n):
+    """המלון שבו יישנו בלילה שאחרי היום הזה."""
+    for h in hotels_raw:
+        if h["check_in_day"] <= day_n <= (h["check_out_day"] - 1):
+            return h
+    return None
+
+def build_day_schedule(day_n, day_sites):
+    """
+    בונה לוח זמנים מפורט ליום נתון: שעת יציאה מהמלון -> נסיעה -> הגעה לאתר -> שהות -> נסיעה לאתר הבא וכו',
+    ולבסוף הערכת שעת הגעה למלון הלינה של אותו הלילה.
+    day_sites: רשימת שורות (dict-like) מהמסלול של אותו יום, לפי סדר הביקור.
+    מחזיר: (departure_hotel, night_hotel, schedule_list, final_arrival_time)
+    """
+    departure_hotel = get_departure_hotel_for_day(day_n)
+    night_hotel = get_night_hotel_for_day(day_n)
+
+    default_time_str = st.session_state.day_departure_times.get(str(day_n), "08:30" if day_n > 1 else "10:00")
+    try:
+        h, m = map(int, default_time_str.split(":"))
+        start_time = datetime.combine(date.today(), datetime.min.time()).replace(hour=h, minute=m)
+    except:
+        start_time = datetime.combine(date.today(), datetime.min.time()).replace(hour=8, minute=30)
+
+    current_time = start_time
+    current_lat, current_lon = (departure_hotel["lat"], departure_hotel["lon"]) if departure_hotel else (None, None)
+
+    schedule = []
+    for site in day_sites:
+        if current_lat is not None:
+            _, travel_h = calculate_travel_estimation(current_lat, current_lon, site["lat"], site["lon"])
+        else:
+            travel_h = 0.0
+        arrival = current_time + timedelta(hours=travel_h)
+        departure = arrival + timedelta(hours=float(site["activity_hours"]))
+        schedule.append({
+            "site": site["site"],
+            "icon": site["icon"],
+            "travel_minutes": round(travel_h * 60),
+            "arrival": arrival,
+            "departure": departure,
+        })
+        current_time = departure
+        current_lat, current_lon = site["lat"], site["lon"]
+
+    final_arrival_at_hotel = None
+    if night_hotel and current_lat is not None:
+        _, travel_h_back = calculate_travel_estimation(current_lat, current_lon, night_hotel["lat"], night_hotel["lon"])
+        final_arrival_at_hotel = current_time + timedelta(hours=travel_h_back)
+
+    return departure_hotel, night_hotel, schedule, final_arrival_at_hotel
 
 @st.cache_data(ttl=600)  # מרענן כל 10 דקות בלבד - מונע קריאות רשת מיותרות בכל אינטראקציה
 def get_weather(lat, lon):
@@ -440,18 +508,18 @@ itinerary = [
         "restaurants": ["Green Cape Cafe", "מסעדות דגים מקומיות בחוף מחירינגי"]
     },
     {
-        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "מערת פרומתאוס (Prometheus Cave)", "hours": "10:00 - 17:00", "wiki_title": "Prometheus Cave",
-        "adult_cost": 40, "child_cost": 40, "activity_hours": 2.5, "travel_time": 2.0, "icon": "🦇", "lat": 42.3768, "lon": 42.6009, "details": "מערת נטיפים תת-קרקעית מרהיבה.",
-        "parking": "חניון מסודר וחינמי של מתחם המערה.",
-        "parking_app": "חניה חינם", "parking_link": "",
-        "restaurants": ["Prometheus Cafe", "מסעדות כפריות באזור צקלטובו (Tskaltubo)"]
-    },
-    {
         "day": 3, "region": "מרטווילי ופרומתאוס", "site": "קניון מרטווילי (Martvili Canyon)", "hours": "10:00 - 17:30", "wiki_title": "Martvili Canyon",
         "adult_cost": 32.25, "child_cost": 32.25, "activity_hours": 2.5, "travel_time": 1.0, "icon": "🛶", "lat": 42.4578, "lon": 42.3767, "details": "שייט בסירות מתנפחות בתוך קניון מים.",
         "parking": "חניון מוסדר של האתר (חינם).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Dadiani Cafe (בתוך הקניון)", "Oda Family Winery (אוכל ביתי מנגרלואי אותנטי בהזמנה מראש)"]
+    },
+    {
+        "day": 3, "region": "מרטווילי ופרומתאוס", "site": "מערת פרומתאוס (Prometheus Cave)", "hours": "10:00 - 17:00", "wiki_title": "Prometheus Cave",
+        "adult_cost": 40, "child_cost": 40, "activity_hours": 2.5, "travel_time": 2.0, "icon": "🦇", "lat": 42.3768, "lon": 42.6009, "details": "מערת נטיפים תת-קרקעית מרהיבה.",
+        "parking": "חניון מסודר וחינמי של מתחם המערה.",
+        "parking_app": "חניה חינם", "parking_link": "",
+        "restaurants": ["Prometheus Cafe", "מסעדות כפריות באזור צקלטובו (Tskaltubo)"]
     },
     {
         "day": 4, "region": "טביליסי", "site": "פארק מתאצמינדה (Mtatsminda Park)", "hours": "11:00 - 22:00", "wiki_title": "Mtatsminda Park",
@@ -489,11 +557,25 @@ itinerary = [
         "restaurants": ["Tunnel Restaurant (בתוך המנהרות של היקב)", "Kindzmarauli Marani (בעיר קוורלי - Kvareli)"]
     },
     {
+        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מסצחתא ומנזר ג'וורי (Mtskheta & Jvari)", "hours": "09:00 - 19:00", "wiki_title": "Mtskheta",
+        "adult_cost": 0, "child_cost": 0, "activity_hours": 1.0, "travel_time": 0.4, "icon": "⛰️", "lat": 41.8412, "lon": 44.7196, "details": "הבירה העתיקה של גאורגיה (אתר מורשת עולמית של אונסק\"ו). מנזר ג'וורי יושב על גבעה ומשקיף על מפגש נהרות המטקווארי (קורה) והאראגווי - עוד תופעת \"שני צבעים\" מרהיבה, ונוף מהיפים בגאורגיה.",
+        "parking": "חניון מסודר בכניסה לעיר העתיקה ובחניון ג'וורי.",
+        "parking_app": "תשלום במקום", "parking_link": "",
+        "restaurants": ["מסעדות קטנות ליד כנסיית סווטיצხובלי", "דוכני מאפה מקומי (לוביאני, שוטי פורי)"]
+    },
+    {
         "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מצודת אננורי ומאגר ז'ינוואלי", "hours": "09:00 - 19:00", "wiki_title": "Ananuri",
         "adult_cost": 0, "child_cost": 0, "activity_hours": 1.0, "travel_time": 1.5, "icon": "🌊", "lat": 42.1643, "lon": 44.7032, "details": "אגם טורקיז ומצודה היסטורית שמורה.",
         "parking": "חניה לצד הדרך / חניון עפר ליד המצודה.",
         "parking_app": "תשלום במקום", "parking_link": "",
         "restaurants": ["Pasanauri Khinkali House (בדרך, מומלץ לעצור לחינקלי)", "Ananuri Cafe"]
+    },
+    {
+        "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "מפגש נהרות האראגווי הלבן והשחור (Pasanauri)", "hours": "פתוח 24/7", "wiki_title": "Aragvi",
+        "adult_cost": 0, "child_cost": 0, "activity_hours": 0.5, "travel_time": 0.2, "icon": "🎨", "lat": 42.3560, "lon": 44.7000, "details": "תופעת טבע נדירה: נהר האראגווי הלבן והשחור נפגשים וזורמים זה לצד זה בלי להתערבב, בגלל הבדלי צפיפות וטמפרטורה - נראה כמו שני צבעים נפרדים באותה גדה. יש דק תצפית קטן עם פסל איילה שמסמן את המקום, ממש בדרך בין אננורי לגודאורי.",
+        "parking": "חניה לצד הכביש ליד דק התצפית (עפר, ללא תשלום).",
+        "parking_app": "חניה חינם", "parking_link": "",
+        "restaurants": ["Pasanauri Khinkali House (באותה עיירה, מומלץ לעצור לחינקלי)", "בקתות קפה קטנות בצד הדרך"]
     },
     {
         "day": 6, "region": "הדרך הצבאית וגודאורי", "site": "אנדרטת גודאורי + רכבת הרים", "hours": "שעות היום", "wiki_title": "Gudauri",
@@ -508,6 +590,13 @@ itinerary = [
         "parking": "חניה למעלה ליד הכנסייה (עפר).",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["Mountain Freaks Cafe (בסטפנצמינדה)", "Cafe 5047m"]
+    },
+    {
+        "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "מפל גוולטי (Gveleti Waterfall)", "hours": "אור יום", "wiki_title": "Gveleti Waterfall",
+        "adult_cost": 0, "child_cost": 0, "activity_hours": 1.5, "travel_time": 0.3, "icon": "💦", "lat": 42.7194, "lon": 44.6350, "details": "הליכה קלה (כ-45 דקות הלוך-חזור) לעבר מפל מרשים בקניון גוולטי, צפונית לסטפנצמינדה לכיוון גבול רוסיה. טבע יפה ופחות תיירותי מגרגטי.",
+        "parking": "חניית עפר קטנה בתחילת השביל.",
+        "parking_app": "חניה חינם", "parking_link": "",
+        "restaurants": ["אין מסעדות בשטח - מומלץ לחזור לסטפנצמינדה"]
     },
     {
         "day": 7, "region": "קזבגי (סטפנצמינדה)", "site": "מלון Rooms Kazbegi", "hours": "12:00 - 22:00", "wiki_title": "Stepantsminda",
@@ -677,30 +766,35 @@ df['actual_date'] = df['day'].apply(lambda d: st.session_state.start_date + time
 hotels_raw = [
     {
         "hotel": "King Suite Black Sea View Hotel", "check_in_day": 1, "check_out_day": 3, "area": "באטומי",
+        "lat": 41.6500, "lon": 41.6360,
         "parking": "חניה פרטית של המלון / חניה ברחוב סמוך.",
         "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Retro (חצ'פורי)", "Fanfan", "Heart of Batumi"]
     },
     {
         "hotel": "Novotel Tbilisi Center", "check_in_day": 3, "check_out_day": 6, "area": "טביליסי",
+        "lat": 41.6941, "lon": 44.8073,
         "parking": "חניון תת-קרקעי פרטי של המלון.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Shavi Lomi", "Culinarium Khasheria", "Pur Pur"]
     },
     {
         "hotel": "Gudauri Lodge", "check_in_day": 6, "check_out_day": 8, "area": "גודאורי",
+        "lat": 42.4756, "lon": 44.4770,
         "parking": "חניה מסודרת חינם לאורחי המלון בחזית.",
         "parking_app": "חניה חינם", "parking_link": "",
         "restaurants": ["מסעדת המלון הראשית", "Cafe Quadra"]
     },
     {
         "hotel": "Novotel Tbilisi Center", "check_in_day": 8, "check_out_day": 9, "area": "טביליסי",
+        "lat": 41.6941, "lon": 44.8073,
         "parking": "חניון תת-קרקעי פרטי של המלון.",
         "parking_app": "Tbilisi Parking", "parking_link": "https://parking.tbilisi.gov.ge/",
         "restaurants": ["Samikitno", "Machakhela"]
     },
     {
         "hotel": "King Suite Black Sea View Hotel", "check_in_day": 9, "check_out_day": 11, "area": "באטומי",
+        "lat": 41.6500, "lon": 41.6360,
         "parking": "חניה פרטית של המלון / ברחוב סמוך.",
         "parking_app": "ParkMate Batumi", "parking_link": "https://play.google.com/store/apps/details?id=com.mkakhidze.parkingbatumi",
         "restaurants": ["Retro", "Chef's Grill"]
@@ -788,6 +882,47 @@ if selected_tab == "📅 פירוט מסלול ואטרקציות":
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            if row['day'] == 9:
+                st.warning("⚠️ יום נהיגה ארוך: מטביליסי לבאטומי (עם עצירה בשקווטילי) זה כ-370 ק\"מ - כ-5-6 שעות נהיגה נטו, מעבר לזמן שנספר להלן בין העצירות עצמן. מומלץ לצאת מוקדם ולתכנן הפסקות דלק ומנוחה.")
+
+            # ---- לוח זמנים יומי: שעת יציאה מהמלון + חישוב נסיעות ושהות ----
+            dep_key = str(row['day'])
+            default_dep = st.session_state.day_departure_times.get(dep_key, "08:30" if row['day'] > 1 else "10:00")
+            try:
+                default_dep_time = datetime.strptime(default_dep, "%H:%M").time()
+            except:
+                default_dep_time = datetime.strptime("08:30", "%H:%M").time()
+
+            dep_col1, dep_col2 = st.columns([1, 3])
+            with dep_col1:
+                dep_time_input = st.time_input(
+                    "שעת יציאה מהמלון" if row['day'] > 1 else "שעת התחלה (יום הגעה)",
+                    value=default_dep_time,
+                    key=f"dep_time_{row['day']}"
+                )
+            new_dep_str = dep_time_input.strftime("%H:%M")
+            if st.session_state.day_departure_times.get(dep_key) != new_dep_str:
+                st.session_state.day_departure_times[dep_key] = new_dep_str
+                persist_all()
+
+            day_sites_for_schedule = filtered_df[filtered_df['day'] == row['day']].to_dict('records')
+            departure_hotel, night_hotel, day_schedule, final_arrival = build_day_schedule(row['day'], day_sites_for_schedule)
+
+            with dep_col2:
+                if departure_hotel:
+                    st.caption(f"🏨 יוצאים מ: {departure_hotel['hotel']} ({departure_hotel['area']})")
+                else:
+                    st.caption("✈️ יום הגעה - זמני ההתחלה תלויים בשעת הנחיתה שלכם, התאימו את שעת ההתחלה בהתאם")
+
+            timeline_rows = ""
+            for s in day_schedule:
+                travel_note = f"🚗 {s['travel_minutes']} דק' נסיעה &nbsp;→&nbsp; " if s['travel_minutes'] > 0 else ""
+                timeline_rows += f"<div style='padding:4px 0;'>{travel_note}<b>{s['icon']} {s['site']}</b>: הגעה <b>{s['arrival'].strftime('%H:%M')}</b> — יציאה <b>{s['departure'].strftime('%H:%M')}</b></div>"
+            if final_arrival and night_hotel:
+                timeline_rows += f"<div style='padding:6px 0 0 0; color:#667eea; font-weight:bold;'>🏨 הגעה משוערת ל-{night_hotel['hotel']}: {final_arrival.strftime('%H:%M')}</div>"
+            st.markdown(f"<div class='info-box' style='margin-bottom:16px;'>{timeline_rows}</div>", unsafe_allow_html=True)
+            st.caption("⏱️ זמני הנסיעה מבוססים על הערכת קו-אווירי + 40% (בקירוב לכביש הררי) במהירות ממוצעת 55 קמ\"ש - התאימו לפי תנאי השטח בפועל.")
 
         date_str = row['actual_date'].strftime("%d/%m/%Y")
         item_cost_ils = row['total_cost_gel'] * exchange_rate
